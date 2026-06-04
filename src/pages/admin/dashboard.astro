@@ -7,7 +7,8 @@ const DIRECT_API_URL = import.meta.env.PUBLIC_SECRET_SHEETS_API_URL;
 const adminNama = Astro.url.searchParams.get('nama') || 'Admin';
 
 let users = [];
-let totalJemaahAktif = 0; 
+let databaseSemuaUser = []; // Untuk kebutuhan live search di client-side
+let totalMudaMudiAktif = 0; 
 let targetNgajiPusat = 2;
 let globalHadirPct = 0;
 let totalHadirHariIni = 0;
@@ -22,10 +23,17 @@ try {
   
   if (data.users) {
     const allUsers = data.users.filter((u: Record<string, any>) => u.Role === 'User');
-    totalJemaahAktif = allUsers.length;
+    totalMudaMudiAktif = allUsers.length;
     totalHadirHariIni = allUsers.filter((u: Record<string, any>) => u.Status_Hari_Ini === 'Hadir').length;
 
-    // Logic: Hanya masukkan jemaah yang statusnya 'Hadir' ke dalam list tabel web
+    // Simpan semua list user terdaftar untuk dilempar ke Javascript pencarian
+    databaseSemuaUser = allUsers.map((u: Record<string, any>) => ({
+      id: u.ID_User,
+      nama: u.Nama,
+      status: u.Status_Hari_Ini
+    }));
+
+    // Logic: Hanya masukkan muda mudi yang statusnya 'Hadir' ke dalam list tabel web
     users = allUsers.filter((u: Record<string, any>) => u.Status_Hari_Ini === 'Hadir');
   }
   
@@ -37,15 +45,11 @@ try {
     }
   }
 
-  if(totalJemaahAktif > 0) {
-    const allUsers = data.users.filter((u: Record<string, any>) => u.Role === 'User');
-    let totalPctHadir = 0;
-    allUsers.forEach((u: Record<string, any>) => {
-      let akumulasiHadirAnak = parseInt(u.Total_Hadir || 0);
-      let pctAnak = Math.round((akumulasiHadirAnak / targetNgajiPusat) * 100);
-      totalPctHadir += Math.min(100, pctAnak); 
-    });
-    globalHadirPct = Math.round(totalPctHadir / totalJemaahAktif);
+  // FIX LOGIKA BARU: Presentase dihitung dari (Total Hadir Hari Ini / Total Muda Mudi Aktif) * 100
+  if (totalMudaMudiAktif > 0) {
+    globalHadirPct = Math.round((totalHadirHariIni / totalMudaMudiAktif) * 100);
+  } else {
+    globalHadirPct = 0;
   }
 } catch (error) {
   console.error("LOG - Gagal memuat data awal tabel:", error);
@@ -57,7 +61,7 @@ try {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Panel Utama Kontrol - Absensi (Safe String Mode)</title>
+  <title>Panel Utama Kontrol - Absensi Muda Mudi Tandes Barat</title>
   
   <script is:inline src="https://cdn.tailwindcss.com"></script>
   <script is:inline>
@@ -82,8 +86,9 @@ try {
     
     <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-5 mb-6 border-b border-slate-200 dark:border-slate-800">
       <div>
+        <!-- FIX: Penyesuaian Deskripsi Judul dengan Huruf Kapital Rapi -->
         <h1 class="text-xl md:text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Panel Utama <span class="text-indigo-600 dark:text-indigo-400">Absensi</span></h1>
-        <p class="text-xs md:text-sm text-slate-500 dark:text-slate-400">Kelola data kehadiran jemaah real-time.</p>
+        <p class="text-xs md:text-sm text-slate-500 dark:text-slate-400">Absensi Muda Mudi Tandes Barat real-time.</p>
       </div>
       <div class="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
         <button id="themeToggleBtn" class="w-10 h-10 flex items-center justify-center rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-lg hover:bg-slate-100 dark:hover:bg-slate-800 shadow-sm transition-all">🌙</button>
@@ -100,7 +105,7 @@ try {
         <div class="text-xl md:text-3xl font-extrabold text-slate-900 dark:text-white">{globalHadirPct}%</div>
       </div>
       <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 md:p-6 rounded-2xl shadow-sm relative overflow-hidden before:content-[''] before:absolute before:left-0 before:top-0 before:h-full before:w-1 before:bg-emerald-500">
-        <h3 class="text-[10px] md:text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-1">Jemaah Hadir Hari Ini</h3>
+        <h3 class="text-[10px] md:text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-1">Muda Mudi Hadir Hari Ini</h3>
         <div class="text-xl md:text-3xl font-extrabold text-slate-900 dark:text-white">{totalHadirHariIni} <span class="text-xs md:text-lg font-medium text-slate-400">Jiwa</span></div>
       </div>
     </div>
@@ -108,7 +113,7 @@ try {
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-6">
       <div class="lg:col-span-7 lg:order-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 md:p-6 rounded-2xl shadow-sm flex flex-col justify-between">
         <div>
-          <h2 class="text-sm md:text-base font-bold border-l-4 border-emerald-500 pl-2.5 text-slate-900 dark:text-white">Scan Kartu QR Jemaah</h2>
+          <h2 class="text-sm md:text-base font-bold border-l-4 border-emerald-500 pl-2.5 text-slate-900 dark:text-white">Scan Kartu QR Muda Mudi</h2>
           <p class="text-[11px] md:text-xs text-slate-400 dark:text-slate-500 mb-4">Arahkan barcode kartu ke kamera untuk absensi otomatis.</p>
         </div>
         <div class="w-full bg-slate-100 dark:bg-slate-950 rounded-xl p-2 md:p-4 border border-slate-200 dark:border-slate-800 flex items-center justify-center min-h-[220px]">
@@ -117,18 +122,34 @@ try {
       </div>
 
       <div class="lg:col-span-5 lg:order-1 flex flex-col gap-6">
+        <!-- SEKSI LIVE SEARCH ABSEN CEPAT & INPUT BARU -->
         <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 md:p-6 rounded-2xl shadow-sm">
-          <h2 class="text-sm md:text-base font-bold mb-4 border-l-4 border-indigo-500 pl-2.5 text-slate-900 dark:text-white">Tambah / Absen Manual</h2>
+          <h2 class="text-sm md:text-base font-bold mb-1 border-l-4 border-indigo-500 pl-2.5 text-slate-900 dark:text-white">Ketik Nama Muda Mudi / Absen Cepat</h2>
+          <p class="text-[11px] text-slate-400 dark:text-slate-500 mb-3">Ketik nama untuk memfilter list, lalu klik nama muda mudi untuk langsung absen harian.</p>
+          
+          <div class="relative mb-4">
+            <input type="text" id="search_nama" placeholder="Cari nama muda mudi di database..." class="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-xs md:text-sm outline-none text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 transition-all font-semibold" autocomplete="off"/>
+            
+            <!-- Box Hasil Shortlist Live Pencarian -->
+            <div id="search_results_container" class="hidden mt-2 max-h-48 overflow-y-auto border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-850 rounded-xl p-1 divide-y divide-slate-100 dark:divide-slate-800 shadow-xl z-50 relative">
+              <!-- Data shortlist di-inject lewat JS -->
+            </div>
+          </div>
+
+          <div class="border-t border-dashed border-slate-200 dark:border-slate-800 my-4 pt-3">
+            <span class="text-[10px] uppercase tracking-wider font-bold text-slate-400">Atau Tambah Data Muda Mudi Baru</span>
+          </div>
+
           <form id="addUserForm" class="space-y-3.5">
             <div>
-              <label class="block text-[11px] font-semibold text-slate-400 dark:text-slate-400 mb-1">Nama Lengkap Anak</label>
+              <label class="block text-[11px] font-semibold text-slate-400 dark:text-slate-400 mb-1">Nama Lengkap Anak Baru</label>
               <input type="text" id="add_nama" placeholder="Nama anak baru..." required class="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs md:text-sm outline-none text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 transition-all"/>
             </div>
             <div>
-              <label class="block text-[11px] font-semibold text-slate-400 dark:text-slate-400 mb-1">ID Kartu (Kosongkan jika ingin otomatis)</label>
+              <label class="block text-[11px] font-semibold text-slate-400 dark:text-slate-400 mb-1">ID Kartu Baru (Kosongkan jika ingin otomatis)</label>
               <input type="text" id="add_id" placeholder="Misal: USR004" class="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs md:text-sm outline-none text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 transition-all"/>
             </div>
-            <button type="submit" id="submitBtn" class="w-full p-2.5 bg-emerald-500 hover:bg-emerald-600 text-white font-semibold text-xs md:text-sm rounded-xl shadow-md transition-all">+ Simpan & Absen</button>
+            <button type="submit" id="submitBtn" class="w-full p-2.5 bg-emerald-500 hover:bg-emerald-600 text-white font-semibold text-xs md:text-sm rounded-xl shadow-md transition-all">+ Simpan Muda Mudi Baru</button>
           </form>
         </div>
 
@@ -145,7 +166,7 @@ try {
     </div>
 
     <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 md:p-6 shadow-sm overflow-hidden mb-8">
-      <h2 class="text-sm md:text-base font-bold mb-4 border-l-4 border-emerald-500 pl-2.5 text-slate-900 dark:text-white">Daftar Kehadiran Jemaah</h2>
+      <h2 class="text-sm md:text-base font-bold mb-4 border-l-4 border-emerald-500 pl-2.5 text-slate-900 dark:text-white">Daftar Kehadiran Muda Mudi Hari Ini</h2>
       <div class="overflow-x-auto w-full rounded-xl border border-slate-100 dark:border-slate-800">
         <table class="w-full text-left border-collapse min-w-[500px]">
           <thead>
@@ -158,26 +179,35 @@ try {
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-200 dark:divide-slate-800">
-            {users.length > 0 && users.map((u: any) => (
-              <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors text-xs md:text-sm text-slate-700 dark:text-slate-300">
-                <td class="p-3.5 font-mono font-bold text-purple-600 dark:text-purple-400">{u.ID_User}</td>
-                <td class="p-3.5 font-semibold text-slate-900 dark:text-white">{u.Nama}</td>
-                <td class="p-3.5">
-                  <span class="inline-block px-2 py-0.5 text-[10px] md:text-xs font-bold rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-                    Hadir
-                  </span>
-                </td>
-                <td class="p-4 font-medium">{u.Total_Hadir || 0} Hari</td>
-                <td class="p-3.5 text-center">
-                  <button data-id={u.ID_User} class="btn-batal-absen px-2.5 py-1 bg-rose-500/10 hover:bg-rose-500 hover:text-white text-rose-500 rounded-lg text-[11px] font-bold transition-all">❌ Batal Hadir</button>
-                </td>
+            {users.length > 0 ? (
+              users.map((u: any) => (
+                <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors text-xs md:text-sm text-slate-700 dark:text-slate-300">
+                  <td class="p-3.5 font-mono font-bold text-purple-600 dark:text-purple-400">{u.ID_User}</td>
+                  <td class="p-3.5 font-semibold text-slate-900 dark:text-white">{u.Nama}</td>
+                  <td class="p-3.5">
+                    <span class="inline-block px-2 py-0.5 text-[10px] md:text-xs font-bold rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                      Hadir
+                    </span>
+                  </td>
+                  <td class="p-4 font-medium">{u.Total_Hadir || 0} Hari</td>
+                  <td class="p-3.5 text-center">
+                    <button data-id={u.ID_User} class="btn-batal-absen px-2.5 py-1 bg-rose-500/10 hover:bg-rose-500 hover:text-white text-rose-500 rounded-lg text-[11px] font-bold transition-all">❌ Batal Hadir</button>
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colspan="5" class="p-8 text-center text-xs md:text-sm text-slate-400">Belum ada muda mudi yang absen hadir hari ini.</td>
               </tr>
-            ))}
+            )}
           </tbody>
         </table>
       </div>
     </div>
   </div>
+
+  <!-- Passing data user sheets ke JavaScript Client -->
+  <div id="user_db_payload" data-json={JSON.stringify(databaseSemuaUser)}></div>
 
 <script is:inline>
   const htmlEl = document.documentElement;
@@ -196,8 +226,12 @@ try {
     const dashboardEl = document.getElementById('adminDashboard');
     const API_URL = dashboardEl ? dashboardEl.getAttribute('data-api') : '';
 
+    // Load Data Muda Mudi dari element payload untuk live search
+    const payloadEl = document.getElementById('user_db_payload');
+    const databaseMudaMudi = payloadEl ? JSON.parse(payloadEl.getAttribute('data-json') || '[]') : [];
+
     // ====================================================
-    // TRIGGER API - MEKANISME ANTI-JSON PARSE ERROR (Bulletproof String Mode)
+    // TRIGGER API - MEKANISME ANTI-JSON PARSE ERROR
     // ====================================================
     async function triggerAPI(payload) {
       if (!API_URL) {
@@ -241,6 +275,77 @@ try {
       }
     }
 
+    // ====================================================
+    // MEKANISME LIVE SEARCH & SHORTLIST ABSEN AUTOMATIC
+    // ====================================================
+    const searchInput = document.getElementById('search_nama');
+    const resultsContainer = document.getElementById('search_results_container');
+
+    searchInput?.addEventListener('input', (e) => {
+      const keyword = e.target.value.toLowerCase().trim();
+      
+      if (!keyword) {
+        resultsContainer.classList.add('hidden');
+        resultsContainer.innerHTML = '';
+        return;
+      }
+
+      // Filter nama muda mudi yang cocok dengan keyword pencarian
+      const filtered = databaseMudaMudi.filter(item => item.nama.toLowerCase().includes(keyword));
+
+      if (filtered.length === 0) {
+        resultsContainer.innerHTML = `<div class="p-3 text-xs text-slate-400 text-center">Nama tidak ditemukan di database</div>`;
+        resultsContainer.classList.remove('hidden');
+        return;
+      }
+
+      // Render elemen shortlist tombol absen harian cepat
+      resultsContainer.innerHTML = filtered.map(item => {
+        const sudahHadir = item.status === 'Hadir';
+        return `
+          <div class="flex items-center justify-between p-2 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors gap-2">
+            <div class="text-left overflow-hidden">
+              <div class="text-xs font-bold text-slate-900 dark:text-white truncate">${item.nama}</div>
+              <div class="text-[10px] font-mono text-indigo-500 dark:text-indigo-400">${item.id}</div>
+            </div>
+            <button type="button" data-id-absen="${item.id}" data-nama-absen="${item.nama}" class="btn-quick-absen text-[10px] font-bold px-3 py-1.5 rounded-lg transition-all ${
+              sudahHadir 
+                ? 'bg-emerald-500/10 text-emerald-500 cursor-not-allowed' 
+                : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm'
+            }" ${sudahHadir ? 'disabled' : ''}>
+              ${sudahHadir ? '✓ Hadir' : 'Absen'}
+            </button>
+          </div>
+        `;
+      }).join('');
+
+      resultsContainer.classList.remove('hidden');
+    });
+
+    // Delegasi klik pada list rekomendasi pencarian agar langsung mengabsen
+    resultsContainer?.addEventListener('click', async (e) => {
+      const targetBtn = e.target.closest('.btn-quick-absen');
+      if (!targetBtn) return;
+
+      const idUser = targetBtn.getAttribute('data-id-absen');
+      const namaUser = targetBtn.getAttribute('data-nama-absen');
+
+      if(idUser) {
+        searchInput.value = namaUser;
+        resultsContainer.classList.add('hidden');
+        // Langsung eksekusi fungsi absen tanpa ketik tombol submit lain
+        await triggerAPI({ action: 'absen', id_user: idUser });
+      }
+    });
+
+    // Tutup hasil pencarian jika klik di luar input area
+    document.addEventListener('click', (e) => {
+      if (!searchInput?.contains(e.target) && !resultsContainer?.contains(e.target)) {
+        resultsContainer?.classList.add('hidden');
+      }
+    });
+
+
     // LISTENER MANUAL FORM
     document.getElementById('addUserForm')?.addEventListener('submit', (e) => {
       e.preventDefault();
@@ -271,13 +376,13 @@ try {
     document.querySelectorAll('.btn-batal-absen').forEach(btn => {
       btn.addEventListener('click', (e) => {
         const idUser = e.currentTarget.getAttribute('data-id');
-        if(confirm('Kurangi rekap kehadiran jemaah ini?')) {
+        if(confirm('Kurangi rekap kehadiran muda mudi ini?')) {
           triggerAPI({ action: 'hapus_absen', id_user: idUser });
         }
       });
     });
 
-    // SCANNER QR CODE KARTU AUTOMATIC (DI-FIX: Utamakan Kamera Belakang + Bebas Pilih)
+    // SCANNER QR CODE KARTU AUTOMATIC
     if (document.getElementById('reader')) {
       const html5QrcodeScanner = new Html5QrcodeScanner("reader", { 
         fps: 24, 
