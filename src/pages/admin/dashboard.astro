@@ -99,7 +99,6 @@ try {
       </div>
     </header>
 
-    <!-- STATS CARD & TOMBOL REFRESH / CLEAR MASAL -->
     <div class="flex flex-col gap-3 mb-6">
       <div class="grid grid-cols-2 gap-3">
         <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl shadow-sm relative overflow-hidden before:content-[''] before:absolute before:left-0 before:top-0 before:h-full before:w-1 before:bg-blue-500">
@@ -112,7 +111,6 @@ try {
         </div>
       </div>
 
-      <!-- ACTION BAR: REFRESH DATA & RESET MASAL -->
       <div class="grid grid-cols-2 gap-2">
         <button id="btnRefreshHalaman" class="py-2.5 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs font-bold rounded-xl transition-all shadow-sm flex items-center justify-center gap-1.5">
           🔄 Refresh Tampilan Data
@@ -195,7 +193,6 @@ try {
       </div>
     </div>
 
-    <!-- AREA TABEL UTAMA -->
     <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-sm mb-8">
       
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 mb-4 border-b border-slate-100 dark:border-slate-800">
@@ -204,7 +201,6 @@ try {
           <p id="filterStatusLabel" class="text-xs font-bold text-amber-600 dark:text-amber-400 mt-1 ml-3 hidden">Filter aktif diterapkan</p>
         </div>
 
-        <!-- CONTROLLER FILTER FOR DESKTOP ONLY -->
         <div class="hidden md:flex items-center gap-3 bg-slate-50 dark:bg-slate-950 p-2 rounded-xl border border-slate-200 dark:border-slate-800 text-xs">
           <span class="font-bold text-slate-400 uppercase tracking-wider text-[10px]">⚡ Excel Filter:</span>
           <select id="desktopFilterGender" class="p-1.5 bg-white dark:bg-slate-800 rounded-lg border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white outline-none font-semibold">
@@ -222,7 +218,6 @@ try {
           <button class="btn-clear-filter px-2 py-1 bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-bold rounded-lg hover:bg-rose-500 hover:text-white transition-all">Clear</button>
         </div>
 
-        <!-- BUTTON TRIGGER POP-UP FILTER (MOBILE ONLY) -->
         <div class="block md:hidden w-full">
           <button id="openMobileFilterBtn" class="w-full py-2.5 bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-900/60 text-indigo-600 dark:text-indigo-400 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all active:scale-[0.98]">
             🔍 Filter Kelompok / Gender
@@ -230,7 +225,6 @@ try {
         </div>
       </div>
 
-      <!-- DESKTOP TABLE VIEW -->
       <div class="hidden md:block overflow-x-auto w-full rounded-xl border border-slate-100 dark:border-slate-800">
         <table class="w-full text-left border-collapse min-w-[650px]">
           <thead>
@@ -248,19 +242,17 @@ try {
         </table>
       </div>
 
-      <!-- MOBILE CARDS VIEW -->
       <div id="bodyTabelHadirMobile" class="block md:hidden space-y-3"></div>
     </div>
   </div>
 
-  <!-- POP-UP BOTTOM SHEET MODAL (MOBILE ONLY) -->
   <div id="mobileFilterModal" class="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-[999] opacity-0 pointer-events-none transition-opacity duration-300 flex items-end justify-center">
     <div id="mobileFilterContent" class="w-full bg-white dark:bg-slate-900 rounded-t-3xl p-5 space-y-4 max-w-md border-t border-slate-200 dark:border-slate-800 shadow-2xl transform translate-y-full transition-transform duration-300">
       
       <div class="flex justify-between items-center border-b border-slate-100 dark:border-slate-800 pb-2">
         <div class="flex items-center gap-2">
           <span class="text-sm">⚡</span>
-          <h3 class="text-sm font-bold text-slate-900 dark:text-white">Filter Kolom</h3>
+          <h3 class="text-sm font-bold text-slate-900 dark:text-white">Filter Tampilan Excel</h3>
         </div>
         <button id="closeMobileFilterBtn" class="w-7 h-7 flex items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 text-xs font-bold text-slate-500 dark:text-slate-400">✕</button>
       </div>
@@ -337,7 +329,7 @@ try {
       location.reload();
     });
 
-    // TRIGGER RESET MASSAL (HANYA MENGOSONGKAN STATUS HARI INI)
+    // TRIGGER RESET MASSAL (TEMBAK ACTION KODE GS BARU)
     document.getElementById('btnResetMassalHariIni')?.addEventListener('click', () => {
       const konfirmasi1 = confirm("⚠️ PERINGATAN MASAL:\n\nApakah Anda yakin ingin MENGOSONGKAN daftar kehadiran hari ini?\nTindakan ini tidak menghapus data orang atau merusak akumulasi bulanan.");
       if (konfirmasi1) {
@@ -380,7 +372,7 @@ try {
         return;
       }
 
-      // RENDER DESKTOP VIEW
+      // 1. RENDER DESKTOP VIEW
       if (tbodyDesktop) {
         tbodyDesktop.innerHTML = dataTerfilter.map(u => `
           <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors text-xs text-slate-700 dark:text-slate-300">
@@ -397,10 +389,11 @@ try {
         `).join('');
       }
 
-      // RENDER MOBILE CARD VIEW
+      // 2. RENDER MOBILE CARD VIEW (KONSISTENSI UKURAN VALUES DAN FONT)
       if (tbodyMobile) {
         tbodyMobile.innerHTML = dataTerfilter.map(u => `
           <div class="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-850 rounded-xl p-4 shadow-sm space-y-3 font-sans">
+            
             <div class="flex justify-between items-start gap-2">
               <div class="overflow-hidden">
                 <h4 class="text-sm font-bold text-slate-900 dark:text-white tracking-tight truncate">${u.Nama}</h4>
@@ -450,6 +443,7 @@ try {
       mobContent.classList.remove('translate-y-full');
     }
 
+    // CLOSE FILTER BOTTOM SHEET
     function closeModalFilter() {
       mobModal.classList.add('pointer-events-none', 'opacity-0');
       mobContent.classList.add('translate-y-full');
@@ -544,7 +538,7 @@ try {
       if (!searchInput?.contains(e.target) && !resultsContainer?.contains(e.target)) resultsContainer?.classList.add('hidden');
     });
 
-    // FORM USER BARU
+    // FORM DAFTARKAN ANAK BARU
     document.getElementById('addUserForm')?.addEventListener('submit', (e) => {
       e.preventDefault();
       const inputNama = document.getElementById('add_nama').value.trim();
@@ -555,13 +549,13 @@ try {
       triggerAPI({ action: 'tambah_user', nama: inputNama, gender: inputGender, kelompok: inputKelompok, id_user: inputId });
     });
 
-    // UPDATE TARGET
+    // UPDATE TARGET BULANAN
     document.getElementById('settingsForm')?.addEventListener('submit', (e) => {
       e.preventDefault();
       triggerAPI({ action: 'update_settings', target_harian: document.getElementById('target_harian').value });
     });
 
-    // QR SCANNER
+    // QR SCANNER OTOMATIS
     if (document.getElementById('reader')) {
       const html5QrcodeScanner = new Html5QrcodeScanner("reader", { 
         fps: 24, 
