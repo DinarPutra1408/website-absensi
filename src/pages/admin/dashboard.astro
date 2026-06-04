@@ -1,0 +1,300 @@
+---
+// 1. SILAKAN MASUKKAN URL GOOGLE APPS SCRIPT BARU KAMU DI SINI
+const DIRECT_API_URL = "https://script.google.com/macros/s/AKfycbyGxFfoZPK5QNvkeug2VmLdiuc-BPVZfo_f-pEIZ1kX4_Cy45SlC9jHBCSUh2pr3Q0V2w/exec";
+
+const adminNama = Astro.url.searchParams.get('nama') || 'Admin';
+
+let users = [];
+let targetNgajiPusat = 2;
+let globalHadirPct = 0;
+let totalHadirHariIni = 0;
+
+try {
+  const response = await fetch(DIRECT_API_URL);
+  const data = await response.json();
+  
+  if (data.users) {
+    users = data.users.filter((u: Record<string, any>) => u.Role === 'User');
+    totalHadirHariIni = users.filter((u: Record<string, any>) => u.Status_Hari_Ini === 'Hadir').length;
+  }
+  
+  if (data.settings) {
+    if (data.settings["Target_Ngaji_1_Bulan"] !== undefined) {
+      targetNgajiPusat = parseInt(data.settings["Target_Ngaji_1_Bulan"]);
+    } else if (data.settings["Target_Hadir_1_Bulan"] !== undefined) {
+      targetNgajiPusat = parseInt(data.settings["Target_Hadir_1_Bulan"]);
+    }
+  }
+
+  if(users.length > 0) {
+    let totalPctHadir = 0;
+    users.forEach((u: Record<string, any>) => {
+      let akumulasiHadirAnak = parseInt(u.Total_Hadir || 0);
+      let pctAnak = Math.round((akumulasiHadirAnak / targetNgajiPusat) * 100);
+      totalPctHadir += Math.min(100, pctAnak); 
+    });
+    globalHadirPct = Math.round(totalPctHadir / users.length);
+  }
+} catch (e) {
+  console.error("LOG - Gagal memuat data awal tabel:", e);
+}
+
+import '../../global.css';
+---
+
+<!DOCTYPE html>
+<html lang="id" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Panel Utama Kontrol - Absensi (Safe String Mode)</title>
+  
+  <script is:inline src="https://cdn.tailwindcss.com"></script>
+  <script is:inline>
+    tailwind.config = { darkMode: 'class' }
+    const savedTheme = localStorage.getItem('theme') || 'dark';
+    if (savedTheme === 'light') document.documentElement.classList.remove('dark');
+    else document.documentElement.classList.add('dark');
+  </script>
+  <script is:inline src="https://unpkg.com/html5-qrcode"></script>
+  
+  <style is:global>
+    #reader { border: none !important; width: 100% !important; }
+    #reader video { border-radius: 12px !important; object-fit: cover !important; width: 100% !important; max-height: 320px !important; background: #000; }
+    #reader__dashboard_section_csr button, #reader__dashboard_section_swaplink, button img {
+      background-color: #4f46e5 !important; color: white !important; border-radius: 10px !important; padding: 10px 20px !important; font-weight: 600 !important; border: none !important; cursor: pointer !important; margin: 8px auto !important; transition: all 0.2s;
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-950 dark:bg-[#090d16] dark:text-slate-100 min-h-screen p-3 md:p-8 font-sans transition-colors duration-300">
+  
+  <div class="max-w-6xl mx-auto" id="adminDashboard" data-api={DIRECT_API_URL}>
+    
+    <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-5 mb-6 border-b border-slate-200 dark:border-slate-800">
+      <div>
+        <h1 class="text-xl md:text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Panel Utama <span class="text-indigo-600 dark:text-indigo-400">Absensi</span></h1>
+        <p class="text-xs md:text-sm text-slate-500 dark:text-slate-400">Kelola data kehadiran jemaah real-time.</p>
+      </div>
+      <div class="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
+        <button id="themeToggleBtn" class="w-10 h-10 flex items-center justify-center rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-lg hover:bg-slate-100 dark:hover:bg-slate-800 shadow-sm transition-all">🌙</button>
+        <div class="flex items-center gap-2">
+          <span class="text-xs md:text-sm text-slate-600 dark:text-slate-400">Admin: <b class="text-slate-900 dark:text-slate-200">{adminNama}</b></span>
+          <a href="/" class="px-3 py-1.5 bg-rose-500 hover:bg-rose-600 text-white text-xs md:text-sm font-semibold rounded-xl shadow-md transition-all">Keluar</a>
+        </div>
+      </div>
+    </header>
+
+    <div class="grid grid-cols-2 gap-4 mb-6">
+      <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 md:p-6 rounded-2xl shadow-sm relative overflow-hidden before:content-[''] before:absolute before:left-0 before:top-0 before:h-full before:w-1 before:bg-blue-500">
+        <h3 class="text-[10px] md:text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-1">Rerata Hadir</h3>
+        <div class="text-xl md:text-3xl font-extrabold text-slate-900 dark:text-white">{globalHadirPct}%</div>
+      </div>
+      <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 md:p-6 rounded-2xl shadow-sm relative overflow-hidden before:content-[''] before:absolute before:left-0 before:top-0 before:h-full before:w-1 before:bg-emerald-500">
+        <h3 class="text-[10px] md:text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-1">Jemaah Hadir Hari Ini</h3>
+        <div class="text-xl md:text-3xl font-extrabold text-slate-900 dark:text-white">{totalHadirHariIni} <span class="text-xs md:text-lg font-medium text-slate-400">Jiwa</span></div>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-6">
+      <div class="lg:col-span-7 lg:order-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 md:p-6 rounded-2xl shadow-sm flex flex-col justify-between">
+        <div>
+          <h2 class="text-sm md:text-base font-bold border-l-4 border-emerald-500 pl-2.5 text-slate-900 dark:text-white">Scan Kartu QR Jemaah</h2>
+          <p class="text-[11px] md:text-xs text-slate-400 dark:text-slate-500 mb-4">Arahkan barcode kartu ke kamera untuk absensi otomatis.</p>
+        </div>
+        <div class="w-full bg-slate-100 dark:bg-slate-950 rounded-xl p-2 md:p-4 border border-slate-200 dark:border-slate-800 flex items-center justify-center min-h-[220px]">
+          <div id="reader"></div>
+        </div>
+      </div>
+
+      <div class="lg:col-span-5 lg:order-1 flex flex-col gap-6">
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 md:p-6 rounded-2xl shadow-sm">
+          <h2 class="text-sm md:text-base font-bold mb-4 border-l-4 border-indigo-500 pl-2.5 text-slate-900 dark:text-white">Tambah / Absen Manual</h2>
+          <form id="addUserForm" class="space-y-3.5">
+            <div>
+              <label class="block text-[11px] font-semibold text-slate-400 dark:text-slate-400 mb-1">Nama Lengkap Anak</label>
+              <input type="text" id="add_nama" placeholder="Nama anak baru..." required class="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs md:text-sm outline-none text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 transition-all"/>
+            </div>
+            <div>
+              <label class="block text-[11px] font-semibold text-slate-400 dark:text-slate-400 mb-1">ID Kartu (Kosongkan jika ingin otomatis)</label>
+              <input type="text" id="add_id" placeholder="Misal: USR004" class="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs md:text-sm outline-none text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 transition-all"/>
+            </div>
+            <button type="submit" id="submitBtn" class="w-full p-2.5 bg-emerald-500 hover:bg-emerald-600 text-white font-semibold text-xs md:text-sm rounded-xl shadow-md transition-all">+ Simpan & Absen</button>
+          </form>
+        </div>
+
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 md:p-6 rounded-2xl shadow-sm">
+          <h2 class="text-sm md:text-base font-bold mb-3 border-l-4 border-indigo-500 pl-2.5 text-slate-900 dark:text-white">Target Sebulan (Jumlah Pengajian)</h2>
+          <form id="settingsForm" class="space-y-3">
+            <div class="flex items-center gap-3">
+              <input type="number" id="target_harian" value={targetNgajiPusat} required min="1" class="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs md:text-sm outline-none text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 transition-all"/>
+              <button type="submit" class="w-auto whitespace-nowrap px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs md:text-sm rounded-xl shadow-md transition-all">Update</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 md:p-6 shadow-sm overflow-hidden mb-8">
+      <h2 class="text-sm md:text-base font-bold mb-4 border-l-4 border-emerald-500 pl-2.5 text-slate-900 dark:text-white">Daftar Kehadiran Jemaah</h2>
+      <div class="overflow-x-auto w-full rounded-xl border border-slate-100 dark:border-slate-800">
+        <table class="w-full text-left border-collapse min-w-[500px]">
+          <thead>
+            <tr class="bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 text-[10px] md:text-[11px] font-bold uppercase tracking-wider">
+              <th class="p-3.5">ID Kartu</th>
+              <th class="p-3.5">Nama</th>
+              <th class="p-3.5">Hari Ini</th>
+              <th class="p-3.5">Total Akumulasi</th>
+              <th class="p-3.5 text-center">Aksi</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-200 dark:divide-slate-800">
+            {users.map((u: any) => (
+              <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors text-xs md:text-sm text-slate-700 dark:text-slate-300">
+                <td class="p-3.5 font-mono font-bold text-purple-600 dark:text-purple-400">{u.ID_User}</td>
+                <td class="p-3.5 font-semibold text-slate-900 dark:text-white">{u.Nama}</td>
+                <td class="p-3.5">
+                  <span class={`inline-block px-2 py-0.5 text-[10px] md:text-xs font-bold rounded-md ${u.Status_Hari_Ini === 'Hadir' ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' : 'bg-rose-500/10 text-rose-600 dark:text-rose-400'}`}>
+                    {u.Status_Hari_Ini || 'Belum Hadir'}
+                  </span>
+                </td>
+                <td class="p-4 font-medium">{u.Total_Hadir || 0} Hari</td>
+                <td class="p-3.5 text-center">
+                  {u.Status_Hari_Ini === 'Hadir' ? (
+                    <button data-id={u.ID_User} class="btn-batal-absen px-2.5 py-1 bg-rose-500/10 hover:bg-rose-500 hover:text-white text-rose-500 rounded-lg text-[11px] font-bold transition-all">❌ Batal Hadir</button>
+                  ) : (
+                    <button data-id={u.ID_User} class="btn-tembak-absen px-2.5 py-1 bg-emerald-500/10 hover:bg-emerald-500 hover:text-white text-emerald-500 rounded-lg text-[11px] font-bold transition-all">✓ Set Hadir</button>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+<script is:inline>
+  const htmlEl = document.documentElement;
+  const themeToggleBtn = document.getElementById('themeToggleBtn');
+  
+  if (themeToggleBtn) {
+    themeToggleBtn.innerText = htmlEl.classList.contains('dark') ? '🌙' : '☀️';
+    themeToggleBtn.addEventListener('click', () => {
+      const isDark = htmlEl.classList.toggle('dark');
+      localStorage.setItem('theme', isDark ? 'dark' : 'light');
+      themeToggleBtn.innerText = isDark ? '🌙' : '☀️';
+    });
+  }
+
+  window.addEventListener('DOMContentLoaded', () => {
+    const dashboardEl = document.getElementById('adminDashboard');
+    const API_URL = dashboardEl ? dashboardEl.getAttribute('data-api') : '';
+
+    // ====================================================
+    // TRIGGER API - MEKANISME ANTI-JSON PARSE ERROR (Bulletproof String Mode)
+    // ====================================================
+    async function triggerAPI(payload) {
+      if (!API_URL) {
+        alert("API URL tidak ditemukan!");
+        return;
+      }
+      
+      const btn = document.getElementById('submitBtn');
+      if (btn) { btn.innerText = "Proses Menyimpan..."; btn.disabled = true; }
+
+      try {
+        const bodyQuery = [];
+        for (const key in payload) {
+          bodyQuery.push(encodeURIComponent(key) + '=' + encodeURIComponent(payload[key]));
+        }
+        const dataKirim = bodyQuery.join('&');
+
+        const response = await fetch(API_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: dataKirim
+        });
+        
+        const teksBalasan = await response.text();
+
+        // JIKA GOOGLE BERHASIL MERESPONS DENGAN TEKS PENANDA KITA
+        if (teksBalasan.indexOf("KATA_KUNCI_SUKSES") > -1) {
+          alert("✅ BERHASIL:\n" + teksBalasan.replace("KATA_KUNCI_SUKSES:", ""));
+          location.reload();
+        } else if (teksBalasan.indexOf("KATA_KUNCI_GAGAL") > -1) {
+          alert("❌ DATABASE MENOLAK:\n" + teksBalasan.replace("KATA_KUNCI_GAGAL:", ""));
+          if (btn) { btn.innerText = "+ Simpan & Absen"; btn.disabled = false; }
+        } else {
+          // Fallback: Google Script sering melakukan redirect HTML kosong tapi data sebenarnya sukses masuk
+          console.log("Respons Mentah Google:", teksBalasan);
+          alert("📢 Sinkronisasi Selesai!\nHalaman diperbarui untuk memuat tabel data terbaru.");
+          location.reload();
+        }
+        
+      } catch (err) {
+        console.warn("Sinkronisasi otomatis dijalankan:", err);
+        location.reload();
+      }
+    }
+
+    // LISTENER MANUAL FORM
+    document.getElementById('addUserForm')?.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const inputNama = document.getElementById('add_nama').value.trim();
+      let inputId = document.getElementById('add_id').value.trim();
+      
+      if (!inputId) {
+        inputId = "USR" + Math.floor(Math.random() * 9000 + 1000);
+      }
+
+      triggerAPI({
+        action: 'tambah_user',
+        nama: inputNama,
+        id_user: inputId
+      });
+    });
+
+    // LISTENER SETTINGS TARGET
+    document.getElementById('settingsForm')?.addEventListener('submit', (e) => {
+      e.preventDefault();
+      triggerAPI({
+        action: 'update_settings',
+        target_harian: document.getElementById('target_harian').value
+      });
+    });
+
+    // LISTENER TOMBOL BATAL ABSEN DI TABEL
+    document.querySelectorAll('.btn-batal-absen').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const idUser = e.currentTarget.getAttribute('data-id');
+        if(confirm('Kurangi rekap kehadiran jemaah ini?')) {
+          triggerAPI({ action: 'hapus_absen', id_user: idUser });
+        }
+      });
+    });
+
+    // LISTENER TOMBOL ABSEN CEPAT DI TABEL
+    document.querySelectorAll('.btn-tembak-absen').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const idUser = e.currentTarget.getAttribute('data-id');
+        triggerAPI({ action: 'absen', id_user: idUser });
+      });
+    });
+
+    // SCANNER QR CODE KARTU AUTOMATIC
+    if (document.getElementById('reader')) {
+      const html5QrcodeScanner = new Html5QrcodeScanner("reader", { 
+        fps: 24, 
+        qrbox: function(w, h) { return { width: Math.floor(Math.min(w, h) * 0.75), height: Math.floor(Math.min(w, h) * 0.75) }; },
+        rememberLastUsedCamera: true, supportedScanTypes: [0]
+      });
+      html5QrcodeScanner.render(async (decodedText) => {
+        html5QrcodeScanner.clear(); 
+        const scannedId = decodedText.trim();
+        await triggerAPI({ action: 'absen', id_user: scannedId });
+      }, () => {});
+    }
+  });
+</script>
+</body>
+</html>
