@@ -6,12 +6,12 @@ import '../../global.css';
 const DIRECT_API_URL = import.meta.env.PUBLIC_SECRET_SHEETS_API_URL;
 const adminNama = Astro.url.searchParams.get('nama') || 'Admin';
 
-let databaseSemuaUser = []; // Untuk kebutuhan live search & sorting di client-side
+let databaseSemuaUser = []; 
 let totalMudaMudiAktif = 0; 
 let targetNgajiPusat = 2;
 let globalHadirPct = 0;
 let totalHadirHariIni = 0;
-let awalHadirHariIni = []; // Data awal jemaah hadir dari server
+let awalHadirHariIni = []; 
 
 try {
   if (!DIRECT_API_URL) {
@@ -32,7 +32,6 @@ try {
       status: u.Status_Hari_Ini
     }));
 
-    // Ambil semua jemaah yang hari ini hadir
     awalHadirHariIni = allUsers.filter((u: Record<string, any>) => u.Status_Hari_Ini === 'Hadir').map((u: Record<string, any>) => ({
       ID_User: u.ID_User,
       Nama: u.Nama,
@@ -86,28 +85,28 @@ try {
   
   <div class="max-w-6xl mx-auto" id="adminDashboard" data-api={DIRECT_API_URL}>
     
-    <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-5 mb-6 border-b border-slate-200 dark:border-slate-800">
+    <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 pb-5 mb-6 border-b border-slate-200 dark:border-slate-800">
       <div>
         <h1 class="text-xl md:text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Panel Utama <span class="text-indigo-600 dark:text-indigo-400">Absensi</span></h1>
-        <p class="text-xs md:text-sm text-slate-500 dark:text-slate-400">Absensi Muda Mudi Tandes Barat real-time.</p>
+        <p class="text-xs text-slate-500 dark:text-slate-400">Absensi MM Desa Tandes Barat.</p>
       </div>
       <div class="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
         <button id="themeToggleBtn" class="w-10 h-10 flex items-center justify-center rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-lg hover:bg-slate-100 dark:hover:bg-slate-800 shadow-sm transition-all">🌙</button>
         <div class="flex items-center gap-2">
-          <span class="text-xs md:text-sm text-slate-600 dark:text-slate-400">Admin: <b class="text-slate-900 dark:text-slate-200">{adminNama}</b></span>
-          <a href="/" class="px-3 py-1.5 bg-rose-500 hover:bg-rose-600 text-white text-xs md:text-sm font-semibold rounded-xl shadow-md transition-all">Keluar</a>
+          <span class="text-xs text-slate-600 dark:text-slate-400">Admin: <b class="text-slate-900 dark:text-slate-200">{adminNama}</b></span>
+          <a href="/" class="px-3 py-1.5 bg-rose-500 hover:bg-rose-600 text-white text-xs font-semibold rounded-xl shadow-md transition-all">Keluar</a>
         </div>
       </div>
     </header>
 
-    <div class="grid grid-cols-2 gap-4 mb-6">
-      <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 md:p-6 rounded-2xl shadow-sm relative overflow-hidden before:content-[''] before:absolute before:left-0 before:top-0 before:h-full before:w-1 before:bg-blue-500">
-        <h3 class="text-[10px] md:text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-1">Rerata Hadir</h3>
+    <div class="grid grid-cols-2 gap-3 mb-6">
+      <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl shadow-sm relative overflow-hidden before:content-[''] before:absolute before:left-0 before:top-0 before:h-full before:w-1 before:bg-blue-500">
+        <h3 class="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-1">Rerata Hadir</h3>
         <div class="text-xl md:text-3xl font-extrabold text-slate-900 dark:text-white">{globalHadirPct}%</div>
       </div>
-      <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 md:p-6 rounded-2xl shadow-sm relative overflow-hidden before:content-[''] before:absolute before:left-0 before:top-0 before:h-full before:w-1 before:bg-emerald-500">
-        <h3 class="text-[10px] md:text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-1">Muda Mudi Hadir Hari Ini</h3>
-        <div class="text-xl md:text-3xl font-extrabold text-slate-900 dark:text-white">{totalHadirHariIni} <span class="text-xs md:text-lg font-medium text-slate-400">Jiwa</span></div>
+      <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl shadow-sm relative overflow-hidden before:content-[''] before:absolute before:left-0 before:top-0 before:h-full before:w-1 before:bg-emerald-500">
+        <h3 class="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-1">Hadir Hari Ini</h3>
+        <div class="text-xl md:text-3xl font-extrabold text-slate-900 dark:text-white">{totalHadirHariIni} <span class="text-xs font-medium text-slate-400">Jiwa</span></div>
       </div>
     </div>
 
@@ -115,7 +114,7 @@ try {
       <div class="lg:col-span-7 lg:order-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 md:p-6 rounded-2xl shadow-sm flex flex-col justify-between">
         <div>
           <h2 class="text-sm md:text-base font-bold border-l-4 border-emerald-500 pl-2.5 text-slate-900 dark:text-white">Scan Kartu QR Muda Mudi</h2>
-          <p class="text-[11px] md:text-xs text-slate-400 dark:text-slate-500 mb-4">Arahkan barcode kartu ke kamera untuk absensi otomatis.</p>
+          <p class="text-[11px] text-slate-400 dark:text-slate-500 mb-4">Arahkan barcode kartu ke kamera untuk absensi otomatis.</p>
         </div>
         <div class="w-full bg-slate-100 dark:bg-slate-950 rounded-xl p-2 md:p-4 border border-slate-200 dark:border-slate-800 flex items-center justify-center min-h-[220px]">
           <div id="reader"></div>
@@ -124,50 +123,50 @@ try {
 
       <div class="lg:col-span-5 lg:order-1 flex flex-col gap-6">
         <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 md:p-6 rounded-2xl shadow-sm">
-          <h2 class="text-sm md:text-base font-bold mb-1 border-l-4 border-indigo-500 pl-2.5 text-slate-900 dark:text-white">Ketik Nama Muda Mudi / Absen Cepat</h2>
-          <p class="text-[11px] text-slate-400 dark:text-slate-500 mb-3">Ketik nama untuk memfilter list, lalu klik nama muda mudi untuk langsung absen harian.</p>
+          <h2 class="text-sm md:text-base font-bold mb-1 border-l-4 border-indigo-500 pl-2.5 text-slate-900 dark:text-white">Ketik Nama / Absen Cepat</h2>
+          <p class="text-[11px] text-slate-400 dark:text-slate-500 mb-3">Klik nama muda mudi untuk langsung absen harian.</p>
           
           <div class="relative mb-4">
-            <input type="text" id="search_nama" placeholder="Cari nama muda mudi di database..." class="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-xs md:text-sm outline-none text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 transition-all font-semibold" autocomplete="off"/>
+            <input type="text" id="search_nama" placeholder="Cari nama muda mudi..." class="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-xs md:text-sm outline-none text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 transition-all font-semibold" autocomplete="off"/>
             
             <div id="search_results_container" class="hidden mt-2 max-h-48 overflow-y-auto border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-850 rounded-xl p-1 divide-y divide-slate-100 dark:divide-slate-800 shadow-xl z-50 relative">
             </div>
           </div>
 
           <div class="border-t border-dashed border-slate-200 dark:border-slate-800 my-4 pt-3">
-            <span class="text-[10px] uppercase tracking-wider font-bold text-slate-400">Atau Tambah Data Muda Mudi Baru</span>
+            <span class="text-[10px] uppercase tracking-wider font-bold text-slate-400">Atau Tambah Data Baru</span>
           </div>
 
           <form id="addUserForm" class="space-y-3">
             <div>
-              <label class="block text-[11px] font-semibold text-slate-400 dark:text-slate-400 mb-1">Nama Lengkap Anak Baru</label>
-              <input type="text" id="add_nama" placeholder="Nama anak baru..." required class="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs md:text-sm outline-none text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 transition-all"/>
+              <label class="block text-[11px] font-semibold text-slate-400 dark:text-slate-400 mb-1">Nama Lengkap</label>
+              <input type="text" id="add_nama" placeholder="Nama anak baru..." required class="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs outline-none text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 transition-all"/>
             </div>
             
             <div class="grid grid-cols-2 gap-2">
               <div>
                 <label class="block text-[11px] font-semibold text-slate-400 dark:text-slate-400 mb-1">Gender</label>
-                <select id="add_gender" required class="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs md:text-sm outline-none text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 font-medium">
+                <select id="add_gender" required class="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs outline-none text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 font-medium">
                   <option value="Laki-laki">Laki-laki</option>
                   <option value="Perempuan">Perempuan</option>
                 </select>
               </div>
               <div>
                 <label class="block text-[11px] font-semibold text-slate-400 dark:text-slate-400 mb-1">Asal Kelompok</label>
-                <select id="add_kelompok" required class="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs md:text-sm outline-none text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 transition-all font-medium">
+                <select id="add_kelompok" required class="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs outline-none text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 transition-all font-medium">
                   <option value="Manukan 2">Manukan 2</option>
                   <option value="Manukan 1">Manukan 1</option>
-                  <option value="Wonorejo">Wonorejo</option>
-                  <option value="Candi Lontar">Candi Lontar</option>
+                  <option value="Tandes">Tandes</option>
+                  <option value="Balongsari">Balongsari</option>
                 </select>
               </div>
             </div>
 
             <div>
-              <label class="block text-[11px] font-semibold text-slate-400 dark:text-slate-400 mb-1">ID Kartu Baru (Kosongkan jika ingin otomatis)</label>
-              <input type="text" id="add_id" placeholder="Misal: USR007" class="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs md:text-sm outline-none text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 transition-all"/>
+              <label class="block text-[11px] font-semibold text-slate-400 dark:text-slate-400 mb-1">ID Kartu (Opsional)</label>
+              <input type="text" id="add_id" placeholder="Misal: USR007" class="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs outline-none text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 transition-all"/>
             </div>
-            <button type="submit" id="submitBtn" class="w-full p-2.5 bg-emerald-500 hover:bg-emerald-600 text-white font-semibold text-xs md:text-sm rounded-xl shadow-md transition-all">+ Simpan Muda Mudi Baru</button>
+            <button type="submit" id="submitBtn" class="w-full p-2.5 bg-emerald-500 hover:bg-emerald-600 text-white font-semibold text-xs rounded-xl shadow-md transition-all">+ Simpan Baru</button>
           </form>
         </div>
 
@@ -175,50 +174,50 @@ try {
           <h2 class="text-sm md:text-base font-bold mb-3 border-l-4 border-indigo-500 pl-2.5 text-slate-900 dark:text-white">Target Sebulan (Jumlah Pengajian)</h2>
           <form id="settingsForm" class="space-y-3">
             <div class="flex items-center gap-3">
-              <input type="number" id="target_harian" value={targetNgajiPusat} required min="1" class="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs md:text-sm outline-none text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 transition-all"/>
-              <button type="submit" class="w-auto whitespace-nowrap px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs md:text-sm rounded-xl shadow-md transition-all">Update</button>
+              <input type="number" id="target_harian" value={targetNgajiPusat} required min="1" class="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs outline-none text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 transition-all"/>
+              <button type="submit" class="w-auto whitespace-nowrap px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs rounded-xl shadow-md transition-all">Update</button>
             </div>
           </form>
         </div>
       </div>
     </div>
 
-    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 md:p-6 shadow-sm overflow-hidden mb-8">
+    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-sm mb-8">
       
-      <div class="border-b border-slate-100 dark:border-slate-800 pb-4 mb-4">
-        <h2 class="text-sm md:text-base font-bold border-l-4 border-emerald-500 pl-2.5 text-slate-900 dark:text-white mb-3">Daftar Kehadiran Muda Mudi Hari Ini</h2>
-        
-        <div class="flex flex-wrap items-center gap-3 bg-slate-100 dark:bg-slate-950 p-3 rounded-xl border border-slate-200 dark:border-slate-800">
-          <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">⚡ Filter :</span>
-          
-          <div class="flex items-center gap-1.5">
-            <label class="text-xs text-slate-500 font-medium">Gender:</label>
-            <select id="excelFilterGender" class="p-1.5 bg-white dark:bg-slate-800 text-xs font-semibold rounded-lg border border-slate-300 dark:border-slate-700 outline-none text-slate-900 dark:text-white focus:ring-1 focus:ring-indigo-500">
-              <option value="Semua">-- Semua Gender --</option>
-              <option value="Laki-laki">Laki-laki</option>
-              <option value="Perempuan">Perempuan</option>
-            </select>
-          </div>
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 mb-4 border-b border-slate-100 dark:border-slate-800">
+        <div>
+          <h2 class="text-sm md:text-base font-bold border-l-4 border-emerald-500 pl-2.5 text-slate-900 dark:text-white">Daftar Kehadiran Hari Ini</h2>
+          <p id="filterStatusLabel" class="text-xs font-bold text-amber-600 dark:text-amber-400 mt-1 ml-3 hidden">Filter aktif diterapkan</p>
+        </div>
 
-          <div class="flex items-center gap-1.5">
-            <label class="text-xs text-slate-500 font-medium">Kelompok:</label>
-            <select id="excelFilterKelompok" class="p-1.5 bg-white dark:bg-slate-800 text-xs font-semibold rounded-lg border border-slate-300 dark:border-slate-700 outline-none text-slate-900 dark:text-white focus:ring-1 focus:ring-indigo-500">
-              <option value="Semua">-- Semua Kelompok --</option>
-              <option value="Candi Lontar">Candi Lontar</option>
-              <option value="Manukan 1">Manukan 1</option>
-              <option value="Manukan 2">Manukan 2</option>
-              <option value="Wonorejo">Wonorejo</option>
-            </select>
-          </div>
-          
-          <button id="resetExcelFilter" class="ml-auto text-[11px] px-2.5 py-1.5 bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-rose-500 hover:text-white font-bold transition-all">Clear Filter</button>
+        <div class="hidden md:flex items-center gap-3 bg-slate-50 dark:bg-slate-950 p-2 rounded-xl border border-slate-200 dark:border-slate-800 text-xs">
+          <span class="font-bold text-slate-400 uppercase tracking-wider text-[10px]">⚡ Excel Filter:</span>
+          <select id="desktopFilterGender" class="p-1.5 bg-white dark:bg-slate-800 rounded-lg border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white outline-none font-semibold">
+            <option value="Semua">Semua Gender</option>
+            <option value="Laki-laki">Laki-laki</option>
+            <option value="Perempuan">Perempuan</option>
+          </select>
+          <select id="desktopFilterKelompok" class="p-1.5 bg-white dark:bg-slate-800 rounded-lg border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white outline-none font-semibold">
+            <option value="Semua">Semua Kelompok</option>
+            <option value="Balongsari">Balongsari</option>
+            <option value="Manukan 1">Manukan 1</option>
+            <option value="Manukan 2">Manukan 2</option>
+            <option value="Tandes">Tandes</option>
+          </select>
+          <button class="btn-clear-filter px-2 py-1 bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-bold rounded-lg hover:bg-rose-500 hover:text-white transition-all">Clear</button>
+        </div>
+
+        <div class="block md:hidden w-full">
+          <button id="openMobileFilterBtn" class="w-full py-2.5 bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-900/60 text-indigo-600 dark:text-indigo-400 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all active:scale-[0.98]">
+            🔍 Filter Kelompok / Gender
+          </button>
         </div>
       </div>
 
-      <div class="overflow-x-auto w-full rounded-xl border border-slate-100 dark:border-slate-800">
-        <table class="w-full text-left border-collapse min-w-[650px]" id="tabelHadirMudaMudi">
+      <div class="hidden md:block overflow-x-auto w-full rounded-xl border border-slate-100 dark:border-slate-800">
+        <table class="w-full text-left border-collapse min-w-[650px]">
           <thead>
-            <tr class="bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 text-[10px] md:text-[11px] font-bold uppercase tracking-wider">
+            <tr class="bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 text-[11px] font-bold uppercase tracking-wider">
               <th class="p-3.5">ID Kartu</th>
               <th class="p-3.5">Nama</th>
               <th class="p-3.5">Gender</th>
@@ -228,9 +227,50 @@ try {
               <th class="p-3.5 text-center">Aksi</th>
             </tr>
           </thead>
-          <tbody id="bodyTabelHadir" class="divide-y divide-slate-200 dark:divide-slate-800">
-            </tbody>
+          <tbody id="bodyTabelHadirDesktop" class="divide-y divide-slate-200 dark:divide-slate-800"></tbody>
         </table>
+      </div>
+
+      <div id="bodyTabelHadirMobile" class="block md:hidden space-y-3"></div>
+    </div>
+  </div>
+
+  <div id="mobileFilterModal" class="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-[999] opacity-0 pointer-events-none transition-opacity duration-300 flex items-end justify-center">
+    <div id="mobileFilterContent" class="w-full bg-white dark:bg-slate-900 rounded-t-3xl p-5 space-y-4 max-w-md border-t border-slate-200 dark:border-slate-800 shadow-2xl transform translate-y-full transition-transform duration-300">
+      
+      <div class="flex justify-between items-center border-b border-slate-100 dark:border-slate-800 pb-2">
+        <div class="flex items-center gap-2">
+          <span class="text-sm">⚡</span>
+          <h3 class="text-sm font-bold text-slate-900 dark:text-white">Filter Tampilan Excel</h3>
+        </div>
+        <button id="closeMobileFilterBtn" class="w-7 h-7 flex items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 text-xs font-bold text-slate-500 dark:text-slate-400">✕</button>
+      </div>
+
+      <div class="space-y-3">
+        <div>
+          <label class="block text-[11px] font-bold uppercase text-slate-400 mb-1">Pilih Gender</label>
+          <select id="mobileFilterGender" class="w-full p-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-semibold rounded-xl text-slate-900 dark:text-white outline-none">
+            <option value="Semua">Semua Gender</option>
+            <option value="Laki-laki">Hanya Laki-laki</option>
+            <option value="Perempuan">Hanya Perempuan</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-[11px] font-bold uppercase text-slate-400 mb-1">Pilih Asal Kelompok</label>
+          <select id="mobileFilterKelompok" class="w-full p-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-semibold rounded-xl text-slate-900 dark:text-white outline-none">
+            <option value="Semua">Semua Kelompok</option>
+            <option value="Balongsari">Balongsari</option>
+            <option value="Manukan 1">Manukan 1</option>
+            <option value="Manukan 2">Manukan 2</option>
+            <option value="Tandes">Tandes</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-2 pt-2">
+        <button class="btn-clear-filter w-full py-2.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-bold transition-all">Reset</button>
+        <button id="applyMobileFilterBtn" class="w-full py-2.5 bg-indigo-600 text-white rounded-xl text-xs font-bold transition-all shadow-md">Terapkan</button>
       </div>
     </div>
   </div>
@@ -256,62 +296,110 @@ try {
     const API_URL = dashboardEl ? dashboardEl.getAttribute('data-api') : '';
 
     const databaseMudaMudi = JSON.parse(document.getElementById('user_db_payload')?.getAttribute('data-json') || '[]');
-    
-    // MASTER DATA JEMAAH HADIR
     const masterListHadir = JSON.parse(document.getElementById('hadir_hari_ini_payload')?.getAttribute('data-json') || '[]');
 
-    const selectGender = document.getElementById('excelFilterGender');
-    const selectKelompok = document.getElementById('excelFilterKelompok');
-    const tbody = document.getElementById('bodyTabelHadir');
+    const deskGender = document.getElementById('desktopFilterGender');
+    const deskKelompok = document.getElementById('desktopFilterKelompok');
 
-    // ====================================================
-    // FUNGSI UTAMA UNTUK FILTER LIVE DATA ALA EXCEL
-    // ====================================================
+    const mobModal = document.getElementById('mobileFilterModal');
+    const mobContent = document.getElementById('mobileFilterContent');
+    const mobGender = document.getElementById('mobileFilterGender');
+    const mobKelompok = document.getElementById('mobileFilterKelompok');
+    
+    const tbodyDesktop = document.getElementById('bodyTabelHadirDesktop');
+    const tbodyMobile = document.getElementById('bodyTabelHadirMobile');
+    const statusLabel = document.getElementById('filterStatusLabel');
+
+    let currentGender = 'Semua';
+    let currentKelompok = 'Semua';
+
     function jalankanExcelFilter() {
-      if (!tbody) return;
+      if (window.innerWidth >= 768) {
+        currentGender = deskGender.value;
+        currentKelompok = deskKelompok.value;
+        mobGender.value = currentGender;
+        mobKelompok.value = currentKelompok;
+      } else {
+        currentGender = mobGender.value;
+        currentKelompok = mobKelompok.value;
+        deskGender.value = currentGender;
+        deskKelompok.value = currentKelompok;
+      }
 
-      const targetGender = selectGender.value;
-      const targetKelompok = selectKelompok.value;
+      if (currentGender !== 'Semua' || currentKelompok !== 'Semua') {
+        statusLabel?.classList.remove('hidden');
+        statusLabel.innerText = `⚠️ Filter: ${currentGender !== 'Semua' ? currentGender : ''} ${currentKelompok !== 'Semua' ? '['+currentKelompok+']' : ''}`;
+      } else {
+        statusLabel?.classList.add('hidden');
+      }
 
-      // Filter data berdasarkan pilihan dropdown excel
       const dataTerfilter = masterListHadir.filter(item => {
-        const cocokGender = (targetGender === 'Semua' || item.Gender === targetGender);
-        const cocokKelompok = (targetKelompok === 'Semua' || item.Kelompok === targetKelompok);
+        const cocokGender = (currentGender === 'Semua' || item.Gender === currentGender);
+        const cocokKelompok = (currentKelompok === 'Semua' || item.Kelompok === currentKelompok);
         return cocokGender && cocokKelompok;
       });
 
       if (dataTerfilter.length === 0) {
-        tbody.innerHTML = `
-          <tr>
-            <td colspan="7" class="p-8 text-center text-xs md:text-sm text-slate-400">Tidak ada data muda mudi yang cocok dengan filter pilihan.</td>
-          </tr>`;
+        if (tbodyDesktop) tbodyDesktop.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-xs text-slate-400">Tidak ada data jemaah yang cocok.</td></tr>`;
+        if (tbodyMobile) tbodyMobile.innerHTML = `<div class="p-6 text-center text-xs font-semibold text-slate-400 border border-dashed border-slate-200 dark:border-slate-800 rounded-xl">Tidak ada data jemaah yang cocok.</div>`;
         return;
       }
 
-      // Render baris tabel
-      tbody.innerHTML = dataTerfilter.map(u => `
-        <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors text-xs md:text-sm text-slate-700 dark:text-slate-300">
-          <td class="p-3.5 font-mono font-bold text-purple-600 dark:text-purple-400">${u.ID_User}</td>
-          <td class="p-3.5 font-semibold text-slate-900 dark:text-white">${u.Nama}</td>
-          <td class="p-3.5">
-            <span class="inline-block px-2 py-0.5 text-[10px] font-bold rounded-md ${u.Gender === 'Perempuan' ? 'bg-pink-500/10 text-pink-500 dark:text-pink-400' : 'bg-blue-500/10 text-blue-500 dark:text-blue-400'}">
-              ${u.Gender}
-            </span>
-          </td>
-          <td class="p-3.5 text-indigo-600 dark:text-indigo-400 font-bold">${u.Kelompok}</td>
-          <td class="p-3.5">
-            <span class="inline-block px-2 py-0.5 text-[10px] md:text-xs font-bold rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-              Hadir
-            </span>
-          </td>
-          <td class="p-4 font-medium">${u.Total_Hadir} Hari</td>
-          <td class="p-3.5 text-center">
-            <button data-id="${u.ID_User}" class="btn-batal-absen px-2.5 py-1 bg-rose-500/10 hover:bg-rose-500 hover:text-white text-rose-500 rounded-lg text-[11px] font-bold transition-all">❌ Batal Hadir</button>
-          </td>
-        </tr>
-      `).join('');
+      // 1. RENDER DESKTOP VIEW
+      if (tbodyDesktop) {
+        tbodyDesktop.innerHTML = dataTerfilter.map(u => `
+          <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors text-xs text-slate-700 dark:text-slate-300">
+            <td class="p-3.5 font-mono font-bold text-purple-600 dark:text-purple-400">${u.ID_User}</td>
+            <td class="p-3.5 font-semibold text-slate-900 dark:text-white">${u.Nama}</td>
+            <td class="p-3.5"><span class="inline-block px-2 py-0.5 text-[10px] font-bold rounded-md ${u.Gender === 'Perempuan' ? 'bg-pink-500/10 text-pink-500' : 'bg-blue-500/10 text-blue-500'}">${u.Gender}</span></td>
+            <td class="p-3.5 text-indigo-600 dark:text-indigo-400 font-bold">${u.Kelompok}</td>
+            <td class="p-3.5"><span class="inline-block px-2 py-0.5 text-[10px] font-bold rounded-md bg-emerald-500/10 text-emerald-500">Hadir</span></td>
+            <td class="p-4 font-medium">${u.Total_Hadir} Hari</td>
+            <td class="p-3.5 text-center">
+              <button data-id="${u.ID_User}" class="btn-batal-absen px-2.5 py-1 bg-rose-500/10 hover:bg-rose-500 hover:text-white text-rose-500 rounded-lg text-[11px] font-bold transition-all">❌ Batal</button>
+            </td>
+          </tr>
+        `).join('');
+      }
 
-      // Pasang ulang trigger hapus absen harian
+      // 2. RENDER MOBILE CARD VIEW (FOKUS KONSISTENSI FONT & TEXT VALUE)
+      if (tbodyMobile) {
+        tbodyMobile.innerHTML = dataTerfilter.map(u => `
+          <div class="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-850 rounded-xl p-4 shadow-sm space-y-3 font-sans">
+            
+            <div class="flex justify-between items-start gap-2">
+              <div class="overflow-hidden">
+                <h4 class="text-sm font-bold text-slate-900 dark:text-white tracking-tight truncate">${u.Nama}</h4>
+                <p class="text-[11px] font-semibold text-purple-600 dark:text-purple-400 mt-0.5">${u.ID_User}</p>
+              </div>
+              <span class="shrink-0 px-2 py-0.5 text-[10px] font-extrabold rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 tracking-wider">HADIR</span>
+            </div>
+            
+            <div class="grid grid-cols-3 gap-2 pt-2.5 border-t border-slate-200 dark:border-slate-800">
+              <div>
+                <span class="text-[10px] text-slate-400 dark:text-slate-500 block uppercase font-bold tracking-tight">Gender</span>
+                <span class="text-xs font-bold ${u.Gender === 'Perempuan' ? 'text-pink-500' : 'text-blue-500'}">${u.Gender}</span>
+              </div>
+              <div>
+                <span class="text-[10px] text-slate-400 dark:text-slate-500 block uppercase font-bold tracking-tight">Kelompok</span>
+                <span class="text-xs font-bold text-slate-800 dark:text-slate-200 truncate block">${u.Kelompok}</span>
+              </div>
+              <div>
+                <span class="text-[10px] text-slate-400 dark:text-slate-500 block uppercase font-bold tracking-tight">Total Rekap</span>
+                <span class="text-xs font-bold text-indigo-600 dark:text-indigo-400">${u.Total_Hadir} Hari</span>
+              </div>
+            </div>
+
+            <div class="pt-1">
+              <button data-id="${u.ID_User}" class="btn-batal-absen w-full py-2.5 bg-rose-500/10 active:bg-rose-600 text-rose-500 active:text-white rounded-xl text-xs font-bold tracking-wide transition-all flex items-center justify-center gap-1.5 shadow-sm">
+                ❌ Batal Kehadiran
+              </button>
+            </div>
+          </div>
+        `).join('');
+      }
+
+      // Re-attach Event Button Batal
       document.querySelectorAll('.btn-batal-absen').forEach(btn => {
         btn.addEventListener('click', (e) => {
           const idUser = e.currentTarget.getAttribute('data-id');
@@ -322,50 +410,66 @@ try {
       });
     }
 
-    // LISTENER PERUBAHAN DROPDOWN (LIVE TRIGGER FILTER)
-    selectGender?.addEventListener('change', jalankanExcelFilter);
-    selectKelompok?.addEventListener('change', jalankanExcelFilter);
+    // CONTROLLERS MODAL POP-UP MOBILE
+    function openModalFilter() {
+      mobModal.classList.remove('pointer-events-none', 'opacity-0');
+      mobContent.classList.remove('translate-y-full');
+    }
 
-    // TOMBOL RESET CLEAR FILTER
-    document.getElementById('resetExcelFilter')?.addEventListener('click', () => {
-      if(selectGender) selectGender.value = 'Semua';
-      if(selectKelompok) selectKelompok.value = 'Semua';
-      jalankanExcelFilter();
+    function closeModalFilter() {
+      mobModal.classList.add('pointer-events-none', 'opacity-0');
+      mobContent.classList.add('translate-y-full');
+    }
+
+    document.getElementById('openMobileFilterBtn')?.addEventListener('click', openModalFilter);
+    document.getElementById('closeMobileFilterBtn')?.addEventListener('click', closeModalFilter);
+    
+    mobModal?.addEventListener('click', (e) => {
+      if (e.target === mobModal) closeModalFilter();
     });
 
-    // Jalankan filter pertama kali saat halaman dibuka untuk load data jemaah
-    jalankanExcelFilter();
+    document.getElementById('applyMobileFilterBtn')?.addEventListener('click', () => {
+      jalankanExcelFilter();
+      closeModalFilter();
+    });
 
+    deskGender?.addEventListener('change', jalankanExcelFilter);
+    deskKelompok?.addEventListener('change', jalankanExcelFilter);
 
-    // ====================================================
-    // TRIGGER API - MEKANISME POST PARAMETER
-    // ====================================================
+    document.querySelectorAll('.btn-clear-filter').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if(deskGender) deskGender.value = 'Semua';
+        if(deskKelompok) deskKelompok.value = 'Semua';
+        if(mobGender) mobGender.value = 'Semua';
+        if(mobKelompok) mobKelompok.value = 'Semua';
+        jalankanExcelFilter();
+        closeModalFilter();
+      });
+    });
+
+    jalankanExcelFilter(); // Jalankan pertama kali
+
+    // MEKANISME API INTERACTION
     async function triggerAPI(payload) {
       if (!API_URL) return alert("API URL tidak ditemukan!");
       const btn = document.getElementById('submitBtn');
-      if (btn) { btn.innerText = "Proses Menyimpan..."; btn.disabled = true; }
+      if (btn) { btn.innerText = "Proses..."; btn.disabled = true; }
 
       try {
         const bodyQuery = [];
         for (const key in payload) bodyQuery.push(encodeURIComponent(key) + '=' + encodeURIComponent(payload[key]));
-        const response = await fetch(API_URL, {
+        await fetch(API_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'text/plain;charset=utf-8' },
           body: bodyQuery.join('&')
         });
-        const teksBalasan = await response.text();
-        if (teksBalasan.indexOf("KATA_KUNCI_SUKSES") > -1) {
-          alert("✅ BERHASIL:\n" + teksBalasan.replace("KATA_KUNCI_SUKSES:", ""));
-        }
         location.reload();
       } catch (err) {
         location.reload();
       }
     }
 
-    // ====================================================
-    // MEKANISME LIVE SEARCH 
-    // ====================================================
+    // MEKANISME LIVE SEARCH
     const searchInput = document.getElementById('search_nama');
     const resultsContainer = document.getElementById('search_results_container');
 
@@ -375,7 +479,7 @@ try {
       const filtered = databaseMudaMudi.filter(item => item.nama.toLowerCase().includes(keyword));
 
       if (filtered.length === 0) {
-        resultsContainer.innerHTML = `<div class="p-3 text-xs text-slate-400 text-center">Nama tidak ditemukan di database</div>`;
+        resultsContainer.innerHTML = `<div class="p-3 text-xs text-slate-400 text-center font-semibold">Nama tidak ditemukan</div>`;
         resultsContainer.classList.remove('hidden');
         return;
       }
@@ -386,9 +490,9 @@ try {
           <div class="flex items-center justify-between p-2 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors gap-2">
             <div class="text-left overflow-hidden">
               <div class="text-xs font-bold text-slate-900 dark:text-white truncate">${item.nama}</div>
-              <div class="text-[10px] font-mono text-indigo-500 dark:text-indigo-400">${item.id}</div>
+              <div class="text-[10px] font-mono text-indigo-500">${item.id}</div>
             </div>
-            <button type="button" data-id-absen="${item.id}" data-nama-absen="${item.nama}" class="btn-quick-absen text-[10px] font-bold px-3 py-1.5 rounded-lg transition-all ${sudahHadir ? 'bg-emerald-500/10 text-emerald-500 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm'}" ${sudahHadir ? 'disabled' : ''}>${sudahHadir ? '✓ Hadir' : 'Absen'}</button>
+            <button type="button" data-id-absen="${item.id}" class="btn-quick-absen text-[10px] font-bold px-3 py-1.5 rounded-lg ${sudahHadir ? 'bg-emerald-500/10 text-emerald-500 cursor-not-allowed' : 'bg-indigo-600 text-white'}" ${sudahHadir ? 'disabled' : ''}>${sudahHadir ? '✓' : 'Absen'}</button>
           </div>`;
       }).join('');
       resultsContainer.classList.remove('hidden');
@@ -408,7 +512,7 @@ try {
       if (!searchInput?.contains(e.target) && !resultsContainer?.contains(e.target)) resultsContainer?.classList.add('hidden');
     });
 
-    // LISTENER ADD USER FORM
+    // USER BAR Baru SUBMIT
     document.getElementById('addUserForm')?.addEventListener('submit', (e) => {
       e.preventDefault();
       const inputNama = document.getElementById('add_nama').value.trim();
@@ -419,13 +523,13 @@ try {
       triggerAPI({ action: 'tambah_user', nama: inputNama, gender: inputGender, kelompok: inputKelompok, id_user: inputId });
     });
 
-    // LISTENER SETTINGS TARGET
+    // UPDATE TARGET
     document.getElementById('settingsForm')?.addEventListener('submit', (e) => {
       e.preventDefault();
       triggerAPI({ action: 'update_settings', target_harian: document.getElementById('target_harian').value });
     });
 
-    // SCANNER QR CODE AUTOMATIC
+    // QR SCANNER AUTOMATIC
     if (document.getElementById('reader')) {
       const html5QrcodeScanner = new Html5QrcodeScanner("reader", { 
         fps: 24, 
