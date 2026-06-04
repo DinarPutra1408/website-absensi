@@ -1,10 +1,12 @@
 ---
-// 1. SILAKAN MASUKKAN URL GOOGLE APPS SCRIPT BARU KAMU DI SINI
-const DIRECT_API_URL = "https://script.google.com/macros/s/AKfycbyGxFfoZPK5QNvkeug2VmLdiuc-BPVZfo_f-pEIZ1kX4_Cy45SlC9jHBCSUh2pr3Q0V2w/exec";
+---
+import { PUBLIC_SECRET_SHEETS_API_URL } from 'astro:env/client';
 
+const DIRECT_API_URL = PUBLIC_SECRET_SHEETS_API_URL;
 const adminNama = Astro.url.searchParams.get('nama') || 'Admin';
 
 let users = [];
+let totalJemaahAktif = 0; // Tambahan untuk tahu total seluruh jemaah
 let targetNgajiPusat = 2;
 let globalHadirPct = 0;
 let totalHadirHariIni = 0;
@@ -14,8 +16,15 @@ try {
   const data = await response.json();
   
   if (data.users) {
-    users = data.users.filter((u: Record<string, any>) => u.Role === 'User');
-    totalHadirHariIni = users.filter((u: Record<string, any>) => u.Status_Hari_Ini === 'Hadir').length;
+    // Ambil semua jemaah tipe 'User' untuk keperluan statistik harian
+    const allUsers = data.users.filter((u: Record<string, any>) => u.Role === 'User');
+    totalJemaahAktif = allUsers.length;
+    totalHadirHariIni = allUsers.filter((u: Record<string, any>) => u.Status_Hari_Ini === 'Hadir').length;
+
+    // --- LOGIC BARU ---
+    // Hanya masukkan jemaah ke dalam array `users` jika Status_Hari_Ini bernilai 'Hadir'
+    // Jika kosong, null, atau belum hadir, otomatis hilang/tidak masuk ke list tabel web
+    users = allUsers.filter((u: Record<string, any>) => u.Status_Hari_Ini === 'Hadir');
   }
   
   if (data.settings) {
@@ -26,20 +35,23 @@ try {
     }
   }
 
-  if(users.length > 0) {
+  // Statistik global tetap dihitung berdasarkan seluruh jemaah aktif agar akurat
+  if(totalJemaahAktif > 0) {
+    const allUsers = data.users.filter((u: Record<string, any>) => u.Role === 'User');
     let totalPctHadir = 0;
-    users.forEach((u: Record<string, any>) => {
+    allUsers.forEach((u: Record<string, any>) => {
       let akumulasiHadirAnak = parseInt(u.Total_Hadir || 0);
       let pctAnak = Math.round((akumulasiHadirAnak / targetNgajiPusat) * 100);
       totalPctHadir += Math.min(100, pctAnak); 
     });
-    globalHadirPct = Math.round(totalPctHadir / users.length);
+    globalHadirPct = Math.round(totalPctHadir / totalJemaahAktif);
   }
 } catch (e) {
   console.error("LOG - Gagal memuat data awal tabel:", e);
 }
 
 import '../../global.css';
+---
 ---
 
 <!DOCTYPE html>
