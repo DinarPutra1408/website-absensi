@@ -281,13 +281,22 @@ import '../../global.css';
       });
     });
 
-    // SCANNER QR CODE KARTU AUTOMATIC
+    // SCANNER QR CODE KARTU AUTOMATIC (DI-FIX: Utamakan Kamera Belakang + Bebas Pilih)
     if (document.getElementById('reader')) {
       const html5QrcodeScanner = new Html5QrcodeScanner("reader", { 
         fps: 24, 
-        qrbox: function(w, h) { return { width: Math.floor(Math.min(w, h) * 0.75), height: Math.floor(Math.min(w, h) * 0.75) }; },
-        rememberLastUsedCamera: true, supportedScanTypes: [0]
+        qrbox: function(w, h) { 
+          return { width: Math.floor(Math.min(w, h) * 0.75), height: Math.floor(Math.min(w, h) * 0.75) }; 
+        },
+        rememberLastUsedCamera: true,
+        supportedScanTypes: [Html5QrcodeScanType.SCAN_TYPE_CAMERA], // Ganti angka [0] jadi tipe kamera resmi
+        
+        // --- INI KUNCI UTAMANYA ---
+        videoConstraints: {
+          facingMode: { ideal: "environment" } // "environment" artinya memaksa browser mendeteksi kamera belakang terlebih dahulu
+        }
       });
+      
       html5QrcodeScanner.render(async (decodedText) => {
         html5QrcodeScanner.clear(); 
         const scannedId = decodedText.trim();
