@@ -35,7 +35,7 @@ if (Astro.request.method === "POST") {
 
     if (matchedUser) {
       const userRole = matchedUser.Role || matchedUser.role || "User";
-      const userNama = matchedUser.Nama || matchedUser.nama || "Jemaah";
+      const userNama = matchedUser.Nama || matchedUser.nama || "Muda Mudi";
       const userId = matchedUser.ID_User || matchedUser.id_user || "";
 
       showCardGenerator = true;
@@ -55,52 +55,155 @@ if (Astro.request.method === "POST") {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Login - Sistem Absensi IoT</title>
+  <title>Login - Sistem Absensi MM Desa Tandes Barat</title>
   
   <script is:inline src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <script is:inline src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
+  <script is:inline>
+    const savedTheme = localStorage.getItem('theme') || 'dark';
+    if (savedTheme === 'light') document.documentElement.classList.add('light-mode');
+  </script>
+
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
+    
+    :root {
+      --bg-gradient: linear-gradient(135deg, #0f172a, #1e1b4b);
+      --container-bg: rgba(30, 41, 59, 0.7);
+      --container-border: rgba(255, 255, 255, 0.1);
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --input-bg: rgba(15, 23, 42, 0.6);
+      --input-border: rgba(255, 255, 255, 0.1);
+      --input-text: #ffffff;
+      --label-color: #cbd5e1;
+      --toggle-bg: rgba(255, 255, 255, 0.08);
+      --toggle-text: #ffffff;
+    }
+
+    html.light-mode {
+      --bg-gradient: linear-gradient(135deg, #f1f5f9, #e2e8f0);
+      --container-bg: rgba(255, 255, 255, 0.85);
+      --container-border: rgba(15, 23, 42, 0.1);
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --input-bg: #ffffff;
+      --input-border: rgba(15, 23, 42, 0.15);
+      --input-text: #0f172a;
+      --label-color: #475569;
+      --toggle-bg: rgba(15, 23, 42, 0.06);
+      --toggle-text: #0f172a;
+    }
+
     body {
-      background: linear-gradient(135deg, #0f172a, #1e1b4b);
+      background: var(--bg-gradient);
       min-height: 100vh;
       display: flex;
       justify-content: center;
       align-items: center;
-      padding: 20px;
+      padding: 16px;
+      transition: background 0.3s ease;
     }
+
     .login-container {
-      background: rgba(30, 41, 59, 0.7);
+      background: var(--container-bg);
       backdrop-filter: blur(16px);
       -webkit-backdrop-filter: blur(16px);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      padding: 40px;
+      border: 1px solid var(--container-border);
+      padding: 40px 30px;
       border-radius: 24px;
       width: 100%;
       max-width: 420px;
-      box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+      box-shadow: 0 20px 40px rgba(0,0,0,0.25);
       text-align: center;
+      transition: all 0.3s ease;
+      position: relative;
     }
+
+    .theme-toggle-container {
+      position: absolute;
+      top: 18px;
+      right: 18px;
+      z-index: 50;
+    }
+    
+    .btn-theme-toggle {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      background: var(--toggle-bg);
+      border: 1px solid var(--container-border);
+      color: var(--toggle-text);
+      font-size: 1.1rem;
+      cursor: pointer;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      transition: all 0.2s ease;
+    }
+    .btn-theme-toggle:hover {
+      transform: scale(1.05);
+      background: rgba(99, 102, 241, 0.15);
+    }
+
     .logo-area {
       font-size: 2.5rem;
-      margin-bottom: 10px;
+      margin-bottom: 12px;
     }
-    h2 { color: #f8fafc; font-weight: 700; margin-bottom: 8px; letter-spacing: -0.5px; }
-    p.subtitle { color: #94a3b8; font-size: 0.95rem; margin-bottom: 32px; }
+    h2 { color: var(--text-main); font-weight: 700; margin-bottom: 8px; letter-spacing: -0.5px; }
+    p.subtitle { color: var(--text-muted); font-size: 0.95rem; margin-bottom: 32px; padding: 0 10px; }
     .form-group { text-align: left; margin-bottom: 20px; }
-    label { display: block; color: #cbd5e1; font-size: 0.85rem; font-weight: 600; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+    label { display: block; color: var(--label-color); font-size: 0.85rem; font-weight: 600; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+    
+    .password-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+    
     input {
       width: 100%;
       padding: 14px 16px;
-      background: rgba(15, 23, 42, 0.6);
-      border: 1px solid rgba(255, 255, 255, 0.1);
+      padding-right: 48px;
+      background: var(--input-bg);
+      border: 1px solid var(--input-border);
       border-radius: 12px;
-      color: #fff;
+      color: var(--input-text);
       font-size: 1rem;
       transition: all 0.3s;
     }
     input:focus { outline: none; border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2); }
+    
+    .toggle-password-btn {
+      position: absolute;
+      right: 14px;
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      transition: all 0.2s ease;
+    }
+    .toggle-password-btn:hover {
+      color: #6366f1;
+      background: rgba(99, 102, 241, 0.1);
+    }
+    .toggle-password-btn svg {
+      width: 20px;
+      height: 20px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
     .btn-submit {
       width: 100%;
       padding: 14px;
@@ -116,6 +219,7 @@ if (Astro.request.method === "POST") {
     }
     .btn-submit:hover { opacity: 0.9; transform: translateY(-1px); }
     .btn-submit:active { transform: translateY(1px); }
+    
     .error-box {
       background: rgba(239, 68, 68, 0.15);
       border: 1px solid rgba(239, 68, 68, 0.3);
@@ -126,14 +230,17 @@ if (Astro.request.method === "POST") {
       margin-bottom: 20px;
       text-align: left;
     }
+    html.light-mode .error-box {
+      background: #fef2f2;
+      border: 1px solid #fca5a5;
+      color: #b91c1c;
+    }
 
-    /* ==================================================== */
-    /* CSS KARTU ULTRA PREMIUM - FIX WARNA UNGU & TEXT      */
-    /* ==================================================== */
+    /* KARTU MODAL */
     .modal-overlay {
       position: fixed; top: 0; left: 0; width: 100%; height: 100%;
       background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(12px);
-      display: flex; justify-content: center; align-items: center; z-index: 9999; padding: 10px;
+      display: flex; justify-content: center; align-items: center; z-index: 9999; padding: 16px;
     }
     .modal-content {
       background: #1e293b; border: 1px solid rgba(255,255,255,0.1);
@@ -144,12 +251,10 @@ if (Astro.request.method === "POST") {
       padding: 4px; background: transparent; margin: 15px auto; width: fit-content;
     }
     
-    /* FIX: Mengembalikan ke Full Ungu Gelap Premium tanpa ada efek hijau yang mengganggu */
     .id-card-print {
       width: 240px; height: 380px; background: linear-gradient(180deg, #1e1b4b, #090d16);
       border-radius: 16px; position: relative; color: white; overflow: hidden; padding: 18px 14px; text-align: center; display: flex; flex-direction: column; justify-content: space-between; align-items: center; box-shadow: 0 15px 35px rgba(0,0,0,0.5);
     }
-    /* Ornamen background ungu-biru lembut khas modern */
     .id-card-print::after {
       content: ''; position: absolute; bottom: -50px; left: -50px; width: 160px; height: 160px;
       background: rgba(99, 102, 241, 0.12); border-radius: 50%; filter: blur(25px);
@@ -158,7 +263,6 @@ if (Astro.request.method === "POST") {
     .card-header-portrait { width: 100%; border-bottom: 2px solid rgba(255,255,255,0.1); padding-bottom: 10px; margin-bottom: 2px; }
     .card-logo-portrait { font-size: 1.6rem; margin-bottom: 4px; display: block; }
     
-    /* FIX: Ukuran tulisan diperbesar (0.82rem), ketebalan dibuat sedang/lebih tipis (600) */
     .card-title-portrait { 
       font-size: 0.82rem; 
       font-weight: 600; 
@@ -170,17 +274,14 @@ if (Astro.request.method === "POST") {
       padding: 0 4px;
     }
     
-    /* Kotak QR Code */
     .qr-holder-portrait {
       width: 115px; height: 115px; background: white; padding: 6px; border-radius: 10px; display: flex; justify-content: center; align-items: center; margin: 8px 0; box-shadow: 0 8px 20px rgba(0,0,0,0.4); z-index: 10;
     }
     .qr-holder-portrait img { width: 100% !important; height: 100% !important; }
     
-    /* Area penampung nama fleksibel (Anti-Potong) */
     .info-holder-portrait { width: 100%; margin-bottom: 4px; text-align: center; z-index: 10; display: flex; flex-direction: column; justify-content: center; flex-grow: 1; }
     .info-label-portrait { font-size: 0.58rem; color: #64748b; text-transform: uppercase; font-weight: 800; letter-spacing: 0.8px; margin-top: 4px; }
     
-    /* Nama Pemilik (Bisa nampung nama panjang) */
     .info-val-nama-portrait { 
       font-size: 0.92rem; 
       font-weight: 700; 
@@ -205,13 +306,28 @@ if (Astro.request.method === "POST") {
     .btn-download:hover { opacity: 0.9; }
     .btn-skip { padding: 12px; background: transparent; color: #94a3b8; border: 1px solid #475569; border-radius: 12px; font-weight: 600; cursor: pointer; font-size: 0.95rem; transition: all 0.2s; }
     .btn-skip:hover { background: rgba(255,255,255,0.05); color: #fff; }
+
+    @media (max-width: 400px) {
+      .login-container {
+        padding: 35px 20px 25px 20px;
+      }
+      p.subtitle {
+        font-size: 0.88rem;
+        margin-bottom: 24px;
+      }
+    }
   </style>
 </head>
 <body>
+
   <div class="login-container">
+    <div class="theme-toggle-container">
+      <button type="button" id="globalThemeToggle" class="btn-theme-toggle" title="Ganti Tema">🌙</button>
+    </div>
+
     <div class="logo-area">🕌</div>
     <h2>Selamat Datang</h2>
-    <p class="subtitle">Sistem Informasi & Absensi IoT</p>
+    <p class="subtitle">Sistem Absensi MM Desa Tandes Barat</p>
     
     {errorMessage && <div class="error-box">⚠️ {errorMessage}</div>}
     
@@ -222,7 +338,16 @@ if (Astro.request.method === "POST") {
       </div>
       <div class="form-group">
         <label for="password">Password</label>
-        <input type="password" id="password" name="password" placeholder="••••••••" required/>
+        <div class="password-wrapper">
+          <input type="password" id="password" name="password" placeholder="••••••••" required/>
+          <button type="button" id="togglePasswordBtn" class="toggle-password-btn" title="Lihat Password">
+            <!-- DEFAULT AWAL: Teks tersembunyi (password), maka ikon default-nya adalah MATA DISILANG -->
+            <svg id="eyeIcon" viewBox="0 0 24 24">
+              <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+              <line x1="1" y1="1" x2="23" y2="23"></line>
+            </svg>
+          </button>
+        </div>
       </div>
       <button type="submit" class="btn-submit">Masuk Ke Sistem</button>
     </form>
@@ -238,7 +363,7 @@ if (Astro.request.method === "POST") {
           <div class="id-card-print" id="idCardPayload">
             <div class="card-header-portrait">
               <span class="card-logo-portrait">🕌</span>
-              <span class="card-title-portrait">Muda Mudi Tanbar Surabaya Barat</span>
+              <span class="card-title-portrait">Muda Mudi Tandes Barat</span>
             </div>
             
             <div class="qr-holder-portrait" id="qrcodeTarget" data-id={cardData.id}></div>
@@ -264,6 +389,40 @@ if (Astro.request.method === "POST") {
   )}
 
   <script is:inline define:vars={{ cardData, showCardGenerator }}>
+    // 1. LOGIKA SWITCHER DARK / LIGHT MODE
+    const htmlEl = document.documentElement;
+    const themeBtn = document.getElementById('globalThemeToggle');
+    
+    if (themeBtn) {
+      themeBtn.innerText = htmlEl.classList.contains('light-mode') ? '☀️' : '🌙';
+      
+      themeBtn.addEventListener('click', () => {
+        const isLight = htmlEl.classList.toggle('light-mode');
+        localStorage.setItem('theme', isLight ? 'light' : 'dark');
+        themeBtn.innerText = isLight ? '☀️' : '🌙';
+      });
+    }
+
+    // 2. LOGIKA INTIP PASSWORD FIX (DILURUSKAN SEBENAR-BENARNYA)
+    const passwordInput = document.getElementById('password');
+    const togglePasswordBtn = document.getElementById('togglePasswordBtn');
+    const eyeIcon = document.getElementById('eyeIcon');
+
+    // Simpan data path string murni
+    const openEyePath = `<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle>`;
+    const closeEyePath = `<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line>`;
+
+    togglePasswordBtn?.addEventListener('click', () => {
+      if (passwordInput.type === 'password') {
+        passwordInput.type = 'text';
+        eyeIcon.innerHTML = openEyePath;  // Saat diklik intip (text) -> Ikon menjadi MATA TERBUKA
+      } else {
+        passwordInput.type = 'password';
+        eyeIcon.innerHTML = closeEyePath; // Saat disembunyikan (password) -> Ikon kembali MATA DISILANG
+      }
+    });
+
+    // 3. LOGIKA REDIRECT & CARD GENERATOR
     function alihkanKeDashboard() {
       const namaEnc = encodeURIComponent(cardData.nama);
       const idEnc = encodeURIComponent(cardData.id);
