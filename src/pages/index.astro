@@ -128,7 +128,7 @@ if (Astro.request.method === "POST") {
     }
 
     /* ==================================================== */
-    /* CSS KARTU MODEL PORTRAIT (RASIO PAS ID CARD MAHASISWA/BUMN) */
+    /* CSS KARTU ULTRA PREMIUM - FIX WARNA UNGU & TEXT      */
     /* ==================================================== */
     .modal-overlay {
       position: fixed; top: 0; left: 0; width: 100%; height: 100%;
@@ -140,42 +140,69 @@ if (Astro.request.method === "POST") {
       padding: 24px; border-radius: 24px; max-width: 380px; width: 100%; text-align: center;
     }
     
-    /* Frame pembungkus kartu saat render preview di layar browser */
     .id-card-wrapper {
       padding: 4px; background: transparent; margin: 15px auto; width: fit-content;
     }
     
-    /* Ukuran Rasio Tegak ID CARD Internasional standar CR-80 (240px x 380px) */
+    /* FIX: Mengembalikan ke Full Ungu Gelap Premium tanpa ada efek hijau yang mengganggu */
     .id-card-print {
       width: 240px; height: 380px; background: linear-gradient(180deg, #1e1b4b, #090d16);
-      border-radius: 16px; position: relative; color: white; overflow: hidden; padding: 20px; text-align: center; display: flex; flex-direction: column; justify-content: space-between; align-items: center; box-shadow: 0 15px 35px rgba(0,0,0,0.5);
+      border-radius: 16px; position: relative; color: white; overflow: hidden; padding: 18px 14px; text-align: center; display: flex; flex-direction: column; justify-content: space-between; align-items: center; box-shadow: 0 15px 35px rgba(0,0,0,0.5);
     }
-    /* Ornamen background modern ala kartu eksekutif BUMN */
+    /* Ornamen background ungu-biru lembut khas modern */
     .id-card-print::after {
       content: ''; position: absolute; bottom: -50px; left: -50px; width: 160px; height: 160px;
-      background: rgba(99, 102, 241, 0.15); border-radius: 50%; filter: blur(25px);
+      background: rgba(99, 102, 241, 0.12); border-radius: 50%; filter: blur(25px);
     }
-    .card-header-portrait { width: 100%; border-bottom: 2px solid rgba(255,255,255,0.1); padding-bottom: 12px; margin-bottom: 5px; }
-    .card-logo-portrait { font-size: 1.8rem; margin-bottom: 2px; display: block; }
-    .card-title-portrait { font-size: 0.8rem; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; color: #f1f5f9; display: block; }
     
-    /* Kotak QR Code pas di tengah kartu */
+    .card-header-portrait { width: 100%; border-bottom: 2px solid rgba(255,255,255,0.1); padding-bottom: 10px; margin-bottom: 2px; }
+    .card-logo-portrait { font-size: 1.6rem; margin-bottom: 4px; display: block; }
+    
+    /* FIX: Ukuran tulisan diperbesar (0.82rem), ketebalan dibuat sedang/lebih tipis (600) */
+    .card-title-portrait { 
+      font-size: 0.82rem; 
+      font-weight: 600; 
+      letter-spacing: 0.8px; 
+      text-transform: uppercase; 
+      color: #f1f5f9; 
+      display: block; 
+      line-height: 1.3; 
+      padding: 0 4px;
+    }
+    
+    /* Kotak QR Code */
     .qr-holder-portrait {
-      width: 125px; height: 125px; background: white; padding: 8px; border-radius: 12px; display: flex; justify-content: center; align-items: center; margin: 12px 0; box-shadow: 0 8px 20px rgba(0,0,0,0.4); z-index: 10;
+      width: 115px; height: 115px; background: white; padding: 6px; border-radius: 10px; display: flex; justify-content: center; align-items: center; margin: 8px 0; box-shadow: 0 8px 20px rgba(0,0,0,0.4); z-index: 10;
     }
     .qr-holder-portrait img { width: 100% !important; height: 100% !important; }
     
-    /* Area Data Karyawan / Mahasiswa */
-    .info-holder-portrait { width: 100%; margin-bottom: 10px; text-align: center; z-index: 10; }
-    .info-label-portrait { font-size: 0.6rem; color: #64748b; text-transform: uppercase; font-weight: 800; letter-spacing: 0.8px; margin-top: 8px; }
-    .info-val-nama-portrait { font-size: 1rem; font-weight: 700; color: #ffffff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 2px; margin-top: 2px; }
-    .info-val-id-portrait { font-size: 0.95rem; font-weight: 700; color: #38bdf8; font-family: 'Courier New', Courier, monospace; letter-spacing: 0.5px; margin-top: 2px; }
+    /* Area penampung nama fleksibel (Anti-Potong) */
+    .info-holder-portrait { width: 100%; margin-bottom: 4px; text-align: center; z-index: 10; display: flex; flex-direction: column; justify-content: center; flex-grow: 1; }
+    .info-label-portrait { font-size: 0.58rem; color: #64748b; text-transform: uppercase; font-weight: 800; letter-spacing: 0.8px; margin-top: 4px; }
+    
+    /* Nama Pemilik (Bisa nampung nama panjang) */
+    .info-val-nama-portrait { 
+      font-size: 0.92rem; 
+      font-weight: 700; 
+      color: #ffffff; 
+      word-break: break-word; 
+      overflow-wrap: break-word;
+      line-height: 1.25;
+      max-height: 2.5em;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      margin-top: 2px;
+      padding: 0 4px;
+    }
+    .info-val-id-portrait { font-size: 0.9rem; font-weight: 700; color: #38bdf8; font-family: 'Courier New', Courier, monospace; letter-spacing: 0.5px; margin-top: 2px; }
     
     .card-footer-text-portrait { font-size: 0.55rem; color: #475569; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; border-top: 1px solid rgba(255,255,255,0.05); width: 100%; padding-top: 8px; }
 
     .action-group { display: flex; flex-direction: column; gap: 10px; margin-top: 15px; }
-    .btn-download { padding: 12px; background: #3b82f6; color: white; border: none; border-radius: 12px; font-weight: 600; cursor: pointer; font-size: 0.95rem; transition: background 0.2s; }
-    .btn-download:hover { background: #2563eb; }
+    .btn-download { padding: 12px; background: linear-gradient(90deg, #6366f1, #a855f7); color: white; border: none; border-radius: 12px; font-weight: 600; cursor: pointer; font-size: 0.95rem; transition: opacity 0.2s; }
+    .btn-download:hover { opacity: 0.9; }
     .btn-skip { padding: 12px; background: transparent; color: #94a3b8; border: 1px solid #475569; border-radius: 12px; font-weight: 600; cursor: pointer; font-size: 0.95rem; transition: all 0.2s; }
     .btn-skip:hover { background: rgba(255,255,255,0.05); color: #fff; }
   </style>
@@ -184,7 +211,7 @@ if (Astro.request.method === "POST") {
   <div class="login-container">
     <div class="logo-area">🕌</div>
     <h2>Selamat Datang</h2>
-    <p class="subtitle">Sistem Informasi Absensi Muda Mudi Tanbar</p>
+    <p class="subtitle">Sistem Informasi & Absensi IoT</p>
     
     {errorMessage && <div class="error-box">⚠️ {errorMessage}</div>}
     
@@ -205,7 +232,7 @@ if (Astro.request.method === "POST") {
     <div class="modal-overlay" id="cardModal">
       <div class="modal-content">
         <h3 style="color: white; font-size: 1.15rem; font-weight: 700; margin-bottom: 2px;">Sukses Terverifikasi!</h3>
-        <p style="color: #94a3b8; font-size: 0.8rem;">Kartu pegawai / jemaah siap didownload.</p>
+        <p style="color: #94a3b8; font-size: 0.8rem;">Kartu identitas resmi Anda siap didownload.</p>
         
         <div class="id-card-wrapper">
           <div class="id-card-print" id="idCardPayload">
@@ -249,42 +276,37 @@ if (Astro.request.method === "POST") {
     }
 
     if (showCardGenerator) {
-      // 1. Generate Barcode QR
       const qrTarget = document.getElementById("qrcodeTarget");
       if (qrTarget) {
         const userId = qrTarget.getAttribute("data-id") || "GUEST";
         new QRCode(qrTarget, {
           text: userId,
-          width: 109,
-          height: 109,
+          width: 103,
+          height: 103,
           colorDark: "#000000",
           colorLight: "#ffffff",
           correctLevel: QRCode.CorrectLevel.H
         });
       }
 
-      // 2. Trik Screenshot Menjadi File PNG Jernih & Presisi (Mendukung cetak kartu fisik)
       document.getElementById("downloadPngBtn")?.addEventListener("click", () => {
         const elemenKartu = document.getElementById("idCardPayload");
         const namaFile = `ID_Card_${cardData.nama.replace(/\s+/g, '_')}.png`;
 
-        // Setelan html2canvas agar render gambar tajam maksimal (scale: 3)
         html2canvas(elemenKartu, {
           scale: 3, 
           useCORS: true,
-          backgroundColor: null, // Membuat background luar transparan agar sudut rounded kartu tetap rapi
+          backgroundColor: null,
           logging: false
         }).then(canvas => {
-          // Mengubah canvas screenshot menjadi file gambar PNG siap download
           const linkDownload = document.createElement('a');
           linkDownload.download = namaFile;
           linkDownload.href = canvas.toDataURL("image/png");
           linkDownload.click();
           
-          // Setelah download sukses terpental ke browser, alihkan ke dashboard
           setTimeout(alihkanKeDashboard, 1200);
         }).catch(err => {
-          console.error("Gabal bikin PNG:", err);
+          console.error("Gagal bikin PNG:", err);
           alihkanKeDashboard();
         });
       });
