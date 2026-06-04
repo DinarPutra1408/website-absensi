@@ -1,6 +1,7 @@
 ---
-import { PUBLIC_SECRET_SHEETS_API_URL } from 'astro:env/client';
 let errorMessage = "";
+let showCardGenerator = false;
+let cardData = { id: "", nama: "", role: "" };
 
 if (Astro.request.method === "POST") {
   try {
@@ -8,7 +9,6 @@ if (Astro.request.method === "POST") {
     const usernameInput = formData.get("username")?.toString().trim();
     const passwordInput = formData.get("password")?.toString().trim();
 
-    // Menggunakan cara resmi Vite: import.meta.env
     const GOOGLE_API_URL = import.meta.env.PUBLIC_SECRET_SHEETS_API_URL;
 
     if (!GOOGLE_API_URL) {
@@ -26,9 +26,7 @@ if (Astro.request.method === "POST") {
     const data = await response.json();
     const users = data.users || [];
 
-    // DI-FIX: Mengamankan properti dengan Optional Chaining (?.) dan fleksibel terhadap kapitalisasi huruf kolom database
     const matchedUser = users.find((u: Record<string, string>) => {
-      // Menemukan key username/password secara aman baik ditulis huruf besar/kecil di database
       const dbUsername = (u.Username || u.username || u.Username_User || "").toString().trim();
       const dbPassword = (u.Password || u.password || "").toString().trim();
       
@@ -36,18 +34,12 @@ if (Astro.request.method === "POST") {
     });
 
     if (matchedUser) {
-      // Mengamankan pembacaan Role dan Nama
       const userRole = matchedUser.Role || matchedUser.role || "User";
       const userNama = matchedUser.Nama || matchedUser.nama || "Jemaah";
       const userId = matchedUser.ID_User || matchedUser.id_user || "";
 
-      if (userRole === "Admin") {
-        return Astro.redirect(`/admin/dashboard?nama=${encodeURIComponent(userNama)}`);
-      } else {
-        return Astro.redirect(
-          `/user/dashboard?id=${encodeURIComponent(userId)}&nama=${encodeURIComponent(userNama)}`
-        );
-      }
+      showCardGenerator = true;
+      cardData = { id: userId, nama: userNama, role: userRole };
     } else {
       errorMessage = "Username atau password salah!";
     }
@@ -64,6 +56,10 @@ if (Astro.request.method === "POST") {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Login - Sistem Absensi IoT</title>
+  
+  <script is:inline src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script is:inline src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
     body {
@@ -130,11 +126,63 @@ if (Astro.request.method === "POST") {
       margin-bottom: 20px;
       text-align: left;
     }
+
+    /* ==================================================== */
+    /* CSS KARTU MODEL PORTRAIT (RASIO PAS ID CARD MAHASISWA/BUMN) */
+    /* ==================================================== */
+    .modal-overlay {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(12px);
+      display: flex; justify-content: center; align-items: center; z-index: 9999; padding: 10px;
+    }
+    .modal-content {
+      background: #1e293b; border: 1px solid rgba(255,255,255,0.1);
+      padding: 24px; border-radius: 24px; max-width: 380px; width: 100%; text-align: center;
+    }
+    
+    /* Frame pembungkus kartu saat render preview di layar browser */
+    .id-card-wrapper {
+      padding: 4px; background: transparent; margin: 15px auto; width: fit-content;
+    }
+    
+    /* Ukuran Rasio Tegak ID CARD Internasional standar CR-80 (240px x 380px) */
+    .id-card-print {
+      width: 240px; height: 380px; background: linear-gradient(180deg, #1e1b4b, #090d16);
+      border-radius: 16px; position: relative; color: white; overflow: hidden; padding: 20px; text-align: center; display: flex; flex-direction: column; justify-content: space-between; align-items: center; box-shadow: 0 15px 35px rgba(0,0,0,0.5);
+    }
+    /* Ornamen background modern ala kartu eksekutif BUMN */
+    .id-card-print::after {
+      content: ''; position: absolute; bottom: -50px; left: -50px; width: 160px; height: 160px;
+      background: rgba(99, 102, 241, 0.15); border-radius: 50%; filter: blur(25px);
+    }
+    .card-header-portrait { width: 100%; border-bottom: 2px solid rgba(255,255,255,0.1); padding-bottom: 12px; margin-bottom: 5px; }
+    .card-logo-portrait { font-size: 1.8rem; margin-bottom: 2px; display: block; }
+    .card-title-portrait { font-size: 0.8rem; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; color: #f1f5f9; display: block; }
+    
+    /* Kotak QR Code pas di tengah kartu */
+    .qr-holder-portrait {
+      width: 125px; height: 125px; background: white; padding: 8px; border-radius: 12px; display: flex; justify-content: center; align-items: center; margin: 12px 0; box-shadow: 0 8px 20px rgba(0,0,0,0.4); z-index: 10;
+    }
+    .qr-holder-portrait img { width: 100% !important; height: 100% !important; }
+    
+    /* Area Data Karyawan / Mahasiswa */
+    .info-holder-portrait { width: 100%; margin-bottom: 10px; text-align: center; z-index: 10; }
+    .info-label-portrait { font-size: 0.6rem; color: #64748b; text-transform: uppercase; font-weight: 800; letter-spacing: 0.8px; margin-top: 8px; }
+    .info-val-nama-portrait { font-size: 1rem; font-weight: 700; color: #ffffff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 2px; margin-top: 2px; }
+    .info-val-id-portrait { font-size: 0.95rem; font-weight: 700; color: #38bdf8; font-family: 'Courier New', Courier, monospace; letter-spacing: 0.5px; margin-top: 2px; }
+    
+    .card-footer-text-portrait { font-size: 0.55rem; color: #475569; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; border-top: 1px solid rgba(255,255,255,0.05); width: 100%; padding-top: 8px; }
+
+    .action-group { display: flex; flex-direction: column; gap: 10px; margin-top: 15px; }
+    .btn-download { padding: 12px; background: #3b82f6; color: white; border: none; border-radius: 12px; font-weight: 600; cursor: pointer; font-size: 0.95rem; transition: background 0.2s; }
+    .btn-download:hover { background: #2563eb; }
+    .btn-skip { padding: 12px; background: transparent; color: #94a3b8; border: 1px solid #475569; border-radius: 12px; font-weight: 600; cursor: pointer; font-size: 0.95rem; transition: all 0.2s; }
+    .btn-skip:hover { background: rgba(255,255,255,0.05); color: #fff; }
   </style>
 </head>
 <body>
   <div class="login-container">
-    <div class="logo-area">🌙</div>
+    <div class="logo-area">🕌</div>
     <h2>Selamat Datang</h2>
     <p class="subtitle">Sistem Informasi & Absensi IoT</p>
     
@@ -152,5 +200,99 @@ if (Astro.request.method === "POST") {
       <button type="submit" class="btn-submit">Masuk Ke Sistem</button>
     </form>
   </div>
+
+  {showCardGenerator && (
+    <div class="modal-overlay" id="cardModal">
+      <div class="modal-content">
+        <h3 style="color: white; font-size: 1.15rem; font-weight: 700; margin-bottom: 2px;">Sukses Terverifikasi!</h3>
+        <p style="color: #94a3b8; font-size: 0.8rem;">Kartu pegawai / jemaah siap didownload.</p>
+        
+        <div class="id-card-wrapper">
+          <div class="id-card-print" id="idCardPayload">
+            <div class="card-header-portrait">
+              <span class="card-logo-portrait">🕌</span>
+              <span class="card-title-portrait">Muda Mudi Tanbar Surabaya Barat</span>
+            </div>
+            
+            <div class="qr-holder-portrait" id="qrcodeTarget" data-id={cardData.id}></div>
+            
+            <div class="info-holder-portrait">
+              <div class="info-label-portrait">Nama Pemilik</div>
+              <div class="info-val-nama-portrait">{cardData.nama}</div>
+              
+              <div class="info-label-portrait">Nomor Registrasi ID</div>
+              <div class="info-val-id-portrait">{cardData.id || "TANPA_ID"}</div>
+            </div>
+            
+            <div class="card-footer-text-portrait">Sistem Absensi</div>
+          </div>
+        </div>
+
+        <div class="action-group">
+          <button type="button" class="btn-download" id="downloadPngBtn">Download Gambar PNG</button>
+          <button type="button" class="btn-skip" id="directToDashboardBtn">Masuk ke Dashboard &rarr;</button>
+        </div>
+      </div>
+    </div>
+  )}
+
+  <script is:inline define:vars={{ cardData, showCardGenerator }}>
+    function alihkanKeDashboard() {
+      const namaEnc = encodeURIComponent(cardData.nama);
+      const idEnc = encodeURIComponent(cardData.id);
+      
+      if (cardData.role === "Admin") {
+        window.location.href = `/admin/dashboard?nama=${namaEnc}`;
+      } else {
+        window.location.href = `/user/dashboard?id=${idEnc}&nama=${namaEnc}`;
+      }
+    }
+
+    if (showCardGenerator) {
+      // 1. Generate Barcode QR
+      const qrTarget = document.getElementById("qrcodeTarget");
+      if (qrTarget) {
+        const userId = qrTarget.getAttribute("data-id") || "GUEST";
+        new QRCode(qrTarget, {
+          text: userId,
+          width: 109,
+          height: 109,
+          colorDark: "#000000",
+          colorLight: "#ffffff",
+          correctLevel: QRCode.CorrectLevel.H
+        });
+      }
+
+      // 2. Trik Screenshot Menjadi File PNG Jernih & Presisi (Mendukung cetak kartu fisik)
+      document.getElementById("downloadPngBtn")?.addEventListener("click", () => {
+        const elemenKartu = document.getElementById("idCardPayload");
+        const namaFile = `ID_Card_${cardData.nama.replace(/\s+/g, '_')}.png`;
+
+        // Setelan html2canvas agar render gambar tajam maksimal (scale: 3)
+        html2canvas(elemenKartu, {
+          scale: 3, 
+          useCORS: true,
+          backgroundColor: null, // Membuat background luar transparan agar sudut rounded kartu tetap rapi
+          logging: false
+        }).then(canvas => {
+          // Mengubah canvas screenshot menjadi file gambar PNG siap download
+          const linkDownload = document.createElement('a');
+          linkDownload.download = namaFile;
+          linkDownload.href = canvas.toDataURL("image/png");
+          linkDownload.click();
+          
+          // Setelah download sukses terpental ke browser, alihkan ke dashboard
+          setTimeout(alihkanKeDashboard, 1200);
+        }).catch(err => {
+          console.error("Gabal bikin PNG:", err);
+          alihkanKeDashboard();
+        });
+      });
+
+      document.getElementById("directToDashboardBtn")?.addEventListener("click", () => {
+        alihkanKeDashboard();
+      });
+    }
+  </script>
 </body>
 </html>
