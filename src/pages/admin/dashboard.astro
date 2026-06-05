@@ -34,7 +34,8 @@ try {
       id: u.ID_User,
       nama: u.Nama,
       status: u.Status_Hari_Ini,
-      kelompok: u.Kelompok || u.NamaKelompok || u.Nama_Kelompok || u.kelompok || '-'
+      kelompok: u.Kelompok || u.NamaKelompok || u.Nama_Kelompok || u.kelompok || '-',
+      gender: u.Gender || u.gender || 'Laki-laki'
     }));
 
     // Ambil data yang Hadir ATAU Izin untuk ditampilkan di tabel
@@ -85,6 +86,14 @@ try {
     #reader video { border-radius: 12px !important; object-fit: cover !important; width: 100% !important; max-height: 320px !important; background: #000; }
     #reader__dashboard_section_csr button, #reader__dashboard_section_swaplink, button img {
       background-color: #4f46e5 !important; color: white !important; border-radius: 10px !important; padding: 10px 20px !important; font-weight: 600 !important; border: none !important; cursor: pointer !important; margin: 8px auto !important; transition: all 0.2s;
+    }
+    /* Highlight text yang di-search */
+    .highlight-match {
+      background-color: rgba(99, 102, 241, 0.25);
+      color: inherit;
+      padding: 0 2px;
+      border-radius: 3px;
+      font-weight: 700;
     }
   </style>
 </head>
@@ -154,7 +163,7 @@ try {
           <div class="relative mb-4">
             <input type="text" id="search_nama" placeholder="Cari nama muda mudi..." class="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-xs md:text-sm outline-none text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 transition-all font-semibold" autocomplete="off"/>
             
-            <div id="search_results_container" class="hidden mt-2 max-h-48 overflow-y-auto border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-850 rounded-xl p-1 divide-y divide-slate-100 dark:divide-slate-800 shadow-xl z-50 relative">
+            <div id="search_results_container" class="hidden mt-2 max-h-72 overflow-y-auto border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 rounded-xl p-1.5 divide-y divide-slate-100 dark:divide-slate-800 shadow-2xl z-50 relative">
             </div>
           </div>
 
@@ -357,11 +366,10 @@ try {
       window.open(`https://wa.me/?text=${waText}`, '_blank');
     });
 
-    // FUNGSI GENERATE TEKS WA - UPDATED WITH PERCENTAGE PER KELOMPOK
+    // FUNGSI GENERATE TEKS WA - WITH PERCENTAGE PER KELOMPOK
     function generateWASummary() {
       const today = new Date().toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
       
-      // Hitung total muda mudi
       const totalMudaMudi = databaseMudaMudi.length;
       const totalHadir = masterListHadir.filter(u => u.Status === 'Hadir').length;
       const totalIzin = masterListHadir.filter(u => u.Status === 'Izin').length;
@@ -371,26 +379,20 @@ try {
       const pctIzin = totalMudaMudi > 0 ? Math.round((totalIzin / totalMudaMudi) * 100) : 0;
       const pctTidakHadir = totalMudaMudi > 0 ? Math.round((totalTidakHadir / totalMudaMudi) * 100) : 0;
 
-      // Hitung statistik per kelompok
       const kelompokStats = {};
       databaseMudaMudi.forEach(u => {
         const k = u.kelompok || 'Lainnya';
-        if (!kelompokStats[k]) {
-          kelompokStats[k] = { total: 0, hadir: 0, izin: 0 };
-        }
+        if (!kelompokStats[k]) kelompokStats[k] = { total: 0, hadir: 0, izin: 0 };
         kelompokStats[k].total++;
       });
 
       masterListHadir.forEach(u => {
         const k = u.Kelompok || 'Lainnya';
-        if (!kelompokStats[k]) {
-          kelompokStats[k] = { total: 0, hadir: 0, izin: 0 };
-        }
+        if (!kelompokStats[k]) kelompokStats[k] = { total: 0, hadir: 0, izin: 0 };
         if (u.Status === 'Hadir') kelompokStats[k].hadir++;
         else if (u.Status === 'Izin') kelompokStats[k].izin++;
       });
 
-      // Urutkan data berdasarkan Kelompok lalu Gender
       const sortedData = [...masterListHadir].sort((a,b) => {
         if(a.Kelompok !== b.Kelompok) return a.Kelompok.localeCompare(b.Kelompok);
         return a.Gender.localeCompare(b.Gender);
@@ -408,14 +410,12 @@ try {
       let text = `*REKAP ABSENSI PENGAJIAN*\n`;
       text += `🗓️ Hari/Tanggal: ${today}\n\n`;
 
-      // RINGKASAN KESELURUHAN
       text += `📊 *RINGKASAN KESELURUHAN:*\n`;
       text += `Total Muda Mudi: ${totalMudaMudi} orang\n`;
       text += `✅ Hadir: ${totalHadir} orang (${pctHadir}%)\n`;
       text += `📝 Izin: ${totalIzin} orang (${pctIzin}%)\n`;
       text += `❌ Tidak Hadir: ${totalTidakHadir} orang (${pctTidakHadir}%)\n\n`;
 
-      // DETAIL PER KELOMPOK
       let noKel = 1;
       for (const k in kelompokMap) {
         const stats = kelompokStats[k] || { total: 0, hadir: 0, izin: 0 };
@@ -441,7 +441,6 @@ try {
         noKel++;
       }
 
-      // Tambahkan List Izin di bagian bawah jika ada
       const listIzin = masterListHadir.filter(u => u.Status === 'Izin');
       if (listIzin.length > 0) {
         text += `*LIST IZIN (${listIzin.length} Orang):*\n`;
@@ -628,37 +627,87 @@ try {
       }
     }
 
-    // MEKANISME LIVE SEARCH (UPDATED UNTUK IZIN)
+    // ==========================================
+    // 🔥 LIVE SEARCH - TAMPILAN BARU (USER FRIENDLY)
+    // ==========================================
     const searchInput = document.getElementById('search_nama');
     const resultsContainer = document.getElementById('search_results_container');
 
+    // Fungsi untuk highlight text yang cocok dengan keyword
+    function highlightText(text, keyword) {
+      if (!keyword) return text;
+      const regex = new RegExp(`(${keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+      return text.replace(regex, '<span class="highlight-match">$1</span>');
+    }
+
     searchInput?.addEventListener('input', (e) => {
       const keyword = e.target.value.toLowerCase().trim();
-      if (!keyword) { resultsContainer.classList.add('hidden'); return; }
-      const filtered = databaseMudaMudi.filter(item => item.nama.toLowerCase().includes(keyword));
+      if (!keyword) { 
+        resultsContainer.classList.add('hidden'); 
+        return; 
+      }
+      
+      const filtered = databaseMudaMudi.filter(item => 
+        item.nama.toLowerCase().includes(keyword) || 
+        item.id.toLowerCase().includes(keyword)
+      );
 
       if (filtered.length === 0) {
-        resultsContainer.innerHTML = `<div class="p-3 text-xs text-slate-400 text-center font-semibold">Nama tidak ditemukan</div>`;
+        resultsContainer.innerHTML = `
+          <div class="p-4 text-center">
+            <div class="text-2xl mb-1">🔍</div>
+            <div class="text-xs text-slate-400 font-semibold">Nama tidak ditemukan</div>
+          </div>`;
         resultsContainer.classList.remove('hidden');
         return;
       }
 
-      resultsContainer.innerHTML = filtered.map(item => {
+      // Info jumlah hasil
+      const countInfo = `<div class="px-2 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400 border-b border-slate-100 dark:border-slate-800">Ditemukan ${filtered.length} orang</div>`;
+
+      resultsContainer.innerHTML = countInfo + filtered.map(item => {
         const sudahHadir = item.status === 'Hadir';
         const sudahIzin = item.status === 'Izin';
 
+        // Badge status saat ini
+        let statusBadge = '';
+        if (sudahHadir) {
+          statusBadge = `<span class="inline-block px-1.5 py-0.5 text-[9px] font-bold rounded bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">✓ Sudah Hadir</span>`;
+        } else if (sudahIzin) {
+          statusBadge = `<span class="inline-block px-1.5 py-0.5 text-[9px] font-bold rounded bg-amber-500/15 text-amber-600 dark:text-amber-400 uppercase tracking-wider">📝 Sudah Izin</span>`;
+        } else {
+          statusBadge = `<span class="inline-block px-1.5 py-0.5 text-[9px] font-bold rounded bg-slate-500/15 text-slate-500 dark:text-slate-400 uppercase tracking-wider">Belum Absen</span>`;
+        }
+
+        // Highlight nama yang di-search
+        const highlightedName = highlightText(item.nama, keyword);
+        const highlightedId = highlightText(item.id, keyword);
+
         return `
-          <div class="flex items-center justify-between p-2 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors gap-2">
-            <div class="text-left overflow-hidden">
-              <div class="text-xs font-bold text-slate-900 dark:text-white truncate">${item.nama}</div>
-              <div class="text-[10px] font-mono text-indigo-500">${item.id}</div>
-            </div>
-            <div class="flex gap-1 shrink-0">
-              <button type="button" data-id-absen="${item.id}" data-action="absen" class="btn-quick-absen text-[10px] font-bold px-2 py-1.5 rounded-lg ${sudahHadir ? 'bg-emerald-500/10 text-emerald-500 cursor-not-allowed' : 'bg-indigo-600 text-white'}" ${sudahHadir ? 'disabled' : ''}>${sudahHadir ? '✓' : 'Hadir'}</button>
-              <button type="button" data-id-absen="${item.id}" data-action="izin" class="btn-quick-absen text-[10px] font-bold px-2 py-1.5 rounded-lg ${sudahIzin ? 'bg-amber-500/10 text-amber-500 cursor-not-allowed' : 'bg-amber-500 text-white'}" ${sudahIzin ? 'disabled' : ''}>${sudahIzin ? '✓' : 'Izin'}</button>
+          <div class="p-2.5 hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors rounded-lg my-1">
+            <div class="flex items-start justify-between gap-2">
+              <div class="flex-1 min-w-0">
+                <div class="text-sm font-bold text-slate-900 dark:text-white leading-tight">${highlightedName}</div>
+                <div class="flex items-center gap-1.5 mt-1 flex-wrap">
+                  <span class="text-[10px] font-mono text-purple-500 dark:text-purple-400 font-semibold">${highlightedId}</span>
+                  <span class="text-slate-300 dark:text-slate-600">•</span>
+                  <span class="text-[10px] font-semibold text-indigo-600 dark:text-indigo-400">${item.kelompok || '-'}</span>
+                  <span class="text-slate-300 dark:text-slate-600">•</span>
+                  ${statusBadge}
+                </div>
+              </div>
+              <div class="flex flex-col gap-1 shrink-0">
+                <button type="button" data-id-absen="${item.id}" data-action="absen" class="btn-quick-absen text-[11px] font-bold px-3 py-1.5 rounded-lg transition-all ${sudahHadir ? 'bg-emerald-500/10 text-emerald-500 cursor-not-allowed opacity-60' : 'bg-emerald-500 hover:bg-emerald-600 text-white shadow-sm hover:shadow'}" ${sudahHadir ? 'disabled' : ''}>
+                  ${sudahHadir ? '✓ Hadir' : '✓ Hadir'}
+                </button>
+                <button type="button" data-id-absen="${item.id}" data-action="izin" class="btn-quick-absen text-[11px] font-bold px-3 py-1.5 rounded-lg transition-all ${sudahIzin ? 'bg-amber-500/10 text-amber-500 cursor-not-allowed opacity-60' : 'bg-amber-500 hover:bg-amber-600 text-white shadow-sm hover:shadow'}" ${sudahIzin ? 'disabled' : ''}>
+                  ${sudahIzin ? '📝 Izin' : '📝 Izin'}
+                </button>
+              </div>
             </div>
           </div>`;
       }).join('');
+      
       resultsContainer.classList.remove('hidden');
     });
 
@@ -674,7 +723,9 @@ try {
     });
 
     document.addEventListener('click', (e) => {
-      if (!searchInput?.contains(e.target) && !resultsContainer?.contains(e.target)) resultsContainer?.classList.add('hidden');
+      if (!searchInput?.contains(e.target) && !resultsContainer?.contains(e.target)) {
+        resultsContainer?.classList.add('hidden');
+      }
     });
 
     // FORM DAFTARKAN ANAK BARU
