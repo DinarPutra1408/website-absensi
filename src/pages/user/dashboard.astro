@@ -1,7 +1,6 @@
 ---
 import '../../global.css';
 
-// Menggunakan cara resmi Vite untuk membaca file .env yang sama seperti halaman login dan admin
 const GOOGLE_API_URL = import.meta.env.PUBLIC_SECRET_SHEETS_API_URL;
 
 const userId = Astro.url.searchParams.get('id') || '';
@@ -12,11 +11,11 @@ if (!userId) {
 }
 
 let userStats = { Status_Hari_Ini: 'Belum Hadir', Total_Hadir: 0 };
-let targets = { Target_Hadir_1_Bulan: 2, Target_Hadir_3_Bulan: 6 }; // Default awal jika database kosong
+let targets = { Target_Hadir_1_Bulan: 2, Target_Hadir_3_Bulan: 6 };
 
 try {
   if (!GOOGLE_API_URL) {
-    throw new Error("Variabel PUBLIC_SECRET_SHEETS_API_URL kosong atau tidak terbaca!");
+    throw new Error("Variabel PUBLIC_SECRET_SHEETS_API_URL kosong!");
   }
 
   const response = await fetch(GOOGLE_API_URL, {
@@ -28,7 +27,6 @@ try {
   const data = await response.json();
   const users = data.users || [];
 
-  // Mencari data user yang sedang login secara aman
   const currentLogged = users.find((u: Record<string, string>) => {
     const dbId = (u.ID_User || u.id_user || u.ID || "").toString().trim();
     return dbId === userId.toString().trim();
@@ -58,7 +56,6 @@ try {
   console.error("Gagal memproses data user server-side:", errMsg);
 }
 
-// Perhitungan Persentase Progress Kehadiran (Maksimal 100%)
 const pctHadir1Bln = Math.min(100, Math.round((userStats.Total_Hadir / (targets.Target_Hadir_1_Bulan || 1)) * 100)) || 0;
 const pctHadir3Bln = Math.min(100, Math.round((userStats.Total_Hadir / (targets.Target_Hadir_3_Bulan || 1)) * 100)) || 0;
 ---
@@ -80,7 +77,6 @@ const pctHadir3Bln = Math.min(100, Math.round((userStats.Total_Hadir / (targets.
   </script>
 
   <style is:global>
-    /* Mengatasi QR Code agar flexbox dan image-nya konsisten */
     #qrcode img {
       margin: 0 auto !important;
       max-width: 100%;
@@ -94,17 +90,20 @@ const pctHadir3Bln = Math.min(100, Math.round((userStats.Total_Hadir / (targets.
   
   <div class="max-w-3xl mx-auto space-y-6">
     
+    <!-- HEADER -->
     <div class="flex justify-between items-center bg-white dark:bg-slate-800/40 backdrop-blur-xl border border-slate-200 dark:border-white/10 p-3 px-4 rounded-2xl shadow-sm">
       <a href="/" class="px-4 py-2 bg-rose-500/10 hover:bg-rose-600 border border-rose-500/20 text-rose-600 dark:text-rose-400 hover:text-white font-bold text-xs rounded-xl transition-all duration-200">
         Keluar
       </a>
       
+      <!-- THEME TOGGLE -->
       <button id="theme-toggle" class="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-white/5 hover:scale-105 active:scale-95 transition-all text-xl cursor-pointer" title="Ganti Tema">
-        <span class="dark:hidden">🌙</span>
-        <span class="hidden dark:inline">☀️</span>
+        <span id="themeIcon" class="hidden dark:inline">🌙</span>
+        <span id="themeIconLight" class="inline dark:hidden">☀️</span>
       </button>
     </div>
 
+    <!-- PROFIL & STATUS -->
     <div class="bg-white dark:bg-slate-800/40 backdrop-blur-xl border border-slate-200 dark:border-white/10 p-5 sm:p-7 rounded-2xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-5 shadow-sm dark:shadow-xl">
       <div class="space-y-2 w-full sm:w-auto">
         <span class="inline-block bg-indigo-600/10 dark:bg-indigo-500/10 border border-indigo-600/20 dark:border-indigo-500/30 text-indigo-600 dark:text-indigo-400 text-xs font-bold tracking-wider px-3 py-1 rounded-full shadow-[0_0_15px_rgba(99,102,241,0.1)]">
@@ -113,11 +112,21 @@ const pctHadir3Bln = Math.min(100, Math.round((userStats.Total_Hadir / (targets.
         <h1 class="text-xl sm:text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white">{userNama}</h1>
       </div>
       
-      <div class={`w-full sm:w-auto text-center px-4 py-2.5 rounded-xl text-sm font-bold border ${userStats.Status_Hari_Ini === 'Hadir' ? 'bg-emerald-500/10 border-emerald-500/40 text-emerald-600 dark:text-emerald-400' : 'bg-amber-500/10 border-amber-500/40 text-amber-600 dark:text-amber-400'}`}>
-        Status Hari Ini: <span class="block sm:inline font-black text-base sm:text-sm mt-0.5 sm:mt-0 uppercase tracking-wide">{userStats.Status_Hari_Ini}</span>
+      <div id="statusBadge" class={`w-full sm:w-auto text-center px-4 py-2.5 rounded-xl text-sm font-bold border transition-all
+        ${userStats.Status_Hari_Ini === 'Hadir' 
+          ? 'bg-emerald-500/10 border-emerald-500/40 text-emerald-600 dark:text-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.15)]' 
+          : userStats.Status_Hari_Ini === 'Izin'
+            ? 'bg-amber-500/10 border-amber-500/40 text-amber-600 dark:text-amber-400 shadow-[0_0_20px_rgba(245,158,11,0.15)]'
+            : 'bg-slate-500/10 border-slate-500/40 text-slate-600 dark:text-slate-400'}`}>
+        <span class="block text-[10px] uppercase tracking-widest opacity-70 mb-0.5">Status Hari Ini</span>
+        <span class="block sm:inline font-black text-base sm:text-sm uppercase tracking-wide">
+          {userStats.Status_Hari_Ini === 'Hadir' ? '✅ ' : userStats.Status_Hari_Ini === 'Izin' ? '📝 ' : '⏳ '}
+          {userStats.Status_Hari_Ini}
+        </span>
       </div>
     </div>
 
+    <!-- PROGRESS KEHADIRAN -->
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
       
       <div class="bg-white dark:bg-slate-800/30 backdrop-blur-lg border border-slate-200 dark:border-white/5 rounded-2xl p-5 sm:p-6 shadow-sm">
@@ -152,47 +161,235 @@ const pctHadir3Bln = Math.min(100, Math.round((userStats.Total_Hadir / (targets.
       
     </div>
 
+    <!-- QR CODE -->
     <div class="text-center p-6 sm:p-10 bg-white dark:bg-slate-800/10 border border-dashed border-slate-300 dark:border-white/10 rounded-2xl shadow-sm">
       <h3 class="text-base sm:text-lg font-bold text-slate-900 dark:text-white mb-1">Kartu Digital QR Presensi</h3>
       <p class="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto mb-6 leading-relaxed">
-        Arahkan kode QR di bawah ini ke lensa kamera scanner IoT posko absensi untuk merekam kehadiran harian secara otomatis.
+        Arahkan kode QR di bawah ini ke lensa kamera scanner untuk merekam kehadiran harian secara otomatis.
       </p>
       <div class="inline-block bg-white p-4 rounded-2xl shadow-xl border border-slate-100 dark:border-transparent transition-transform duration-300 hover:scale-[1.02]">
         <div id="qrcode" data-uid={userId} class="w-[160px] h-[160px] sm:w-[180px] sm:h-[180px] flex items-center justify-center"></div>
       </div>
     </div>
 
+    <!-- FORM UBAH PASSWORD - FIXED: DEFAULT CHEVRON UP, DEFAULT EYE-SLASH -->
+    <div class="bg-white dark:bg-slate-800/40 backdrop-blur-xl border border-slate-200 dark:border-white/10 rounded-2xl shadow-sm overflow-hidden">
+      <button id="togglePasswordForm" class="w-full p-5 flex justify-between items-center hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors">
+        <div class="flex items-center gap-3 text-left">
+          <div class="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-xl">
+            🔐
+          </div>
+          <div>
+            <h3 class="text-sm font-bold text-slate-900 dark:text-white">Ubah Kata Sandi</h3>
+            <p class="text-[11px] text-slate-500 dark:text-slate-400">Ganti password default dengan password pribadi</p>
+          </div>
+        </div>
+        <!-- CHEVRON: Default UP (rotate-180), saat dibuka = DOWN (remove rotate) -->
+        <svg id="chevronIcon" class="w-5 h-5 text-slate-400 transition-transform duration-300 rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+        </svg>
+      </button>
+
+      <div id="passwordFormContainer" class="hidden border-t border-slate-100 dark:border-white/5">
+        <form id="formUbahPassword" class="p-5 space-y-4">
+          
+          <div>
+            <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Password Lama</label>
+            <div class="relative">
+              <input type="password" id="inputPassLama" required placeholder="Masukkan password saat ini..." 
+                class="w-full p-3 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-white/10 rounded-xl text-sm outline-none text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 transition-all pr-10"/>
+              <button type="button" class="toggle-password absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors" data-target="inputPassLama">
+                <!-- DEFAULT: Eye-Slash Icon (Password Hidden) -->
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"></path>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Password Baru</label>
+            <div class="relative">
+              <input type="password" id="inputPassBaru" required minlength="4" placeholder="Minimal 4 karakter (bebas)" 
+                class="w-full p-3 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-white/10 rounded-xl text-sm outline-none text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 transition-all pr-10"/>
+              <button type="button" class="toggle-password absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors" data-target="inputPassBaru">
+                <!-- DEFAULT: Eye-Slash Icon (Password Hidden) -->
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"></path>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Konfirmasi Password Baru</label>
+            <div class="relative">
+              <input type="password" id="inputPassKonfirmasi" required minlength="4" placeholder="Ketik ulang password baru..." 
+                class="w-full p-3 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-white/10 rounded-xl text-sm outline-none text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 transition-all pr-10"/>
+              <button type="button" class="toggle-password absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors" data-target="inputPassKonfirmasi">
+                <!-- DEFAULT: Eye-Slash Icon (Password Hidden) -->
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"></path>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <div id="passwordMsg" class="hidden text-xs font-semibold p-3 rounded-xl"></div>
+
+          <button type="submit" id="btnSubmitPassword" class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm rounded-xl shadow-md transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+            <span id="btnSubmitText">Simpan Password Baru</span>
+          </button>
+
+        </form>
+      </div>
+    </div>
+
   </div>
 
-  <script is:inline>
-    // Logic Saklar Ganti Tema (Dark / Light)
+  <script>
+    const GOOGLE_API_URL = import.meta.env.PUBLIC_SECRET_SHEETS_API_URL;
+
+    // ====== TOGGLE TEMA ======
     const toggleBtn = document.getElementById('theme-toggle');
     
-    toggleBtn.addEventListener('click', () => {
+    toggleBtn?.addEventListener('click', () => {
       const isDark = document.documentElement.classList.contains('dark');
       if (isDark) {
         document.documentElement.classList.remove('dark');
         localStorage.setItem('theme', 'light');
       } else {
         document.documentElement.classList.add('dark');
-        localStorage.setItem('theme', 'theme');
         localStorage.setItem('theme', 'dark');
       }
     });
 
-    // Generator QR Code Otomatis
+    // ====== TOGGLE FORM PASSWORD - FIXED: DEFAULT UP, OPEN = DOWN ======
+    const togglePasswordBtn = document.getElementById('togglePasswordForm');
+    const passwordFormContainer = document.getElementById('passwordFormContainer');
+    const chevronIcon = document.getElementById('chevronIcon');
+    
+    togglePasswordBtn?.addEventListener('click', () => {
+      const isHidden = passwordFormContainer?.classList.toggle('hidden');
+      // Default: rotate-180 (UP), saat dibuka: remove rotate-180 (DOWN)
+      if (!isHidden) {
+        chevronIcon?.classList.remove('rotate-180');
+      } else {
+        chevronIcon?.classList.add('rotate-180');
+      }
+    });
+
+    // ====== PASSWORD VISIBILITY TOGGLE - FIXED: DEFAULT EYE-SLASH, CLICK = EYE ======
+    const eyeIconSVG = `
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+    `;
+    
+    const eyeSlashIconSVG = `
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"></path>
+    `;
+
+    document.querySelectorAll('.toggle-password').forEach(btn => {
+      btn.addEventListener('click', function(this: HTMLElement) {
+        const targetId = this.getAttribute('data-target');
+        const input = targetId ? document.getElementById(targetId) as HTMLInputElement | null : null;
+        const iconSvg = this.querySelector('svg');
+        
+        if (input && iconSvg) {
+          if (input.type === 'password') {
+            // Show password - change to EYE icon (visible)
+            input.type = 'text';
+            iconSvg.innerHTML = eyeIconSVG;
+          } else {
+            // Hide password - change back to EYE-SLASH icon (hidden)
+            input.type = 'password';
+            iconSvg.innerHTML = eyeSlashIconSVG;
+          }
+        }
+      });
+    });
+
+    // ====== FORM UBAH PASSWORD ======
+    const formPassword = document.getElementById('formUbahPassword') as HTMLFormElement | null;
+    const passwordMsg = document.getElementById('passwordMsg');
+    const btnSubmit = document.getElementById('btnSubmitPassword') as HTMLButtonElement | null;
+    const btnSubmitText = document.getElementById('btnSubmitText');
+
+    function showPasswordMsg(text: string, isSuccess: boolean) {
+      if (!passwordMsg) return;
+      passwordMsg.classList.remove('hidden');
+      passwordMsg.className = `text-xs font-semibold p-3 rounded-xl ${
+        isSuccess 
+          ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30' 
+          : 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/30'
+      }`;
+      passwordMsg.innerText = text;
+    }
+
+    formPassword?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const passLama = (document.getElementById('inputPassLama') as HTMLInputElement).value.trim();
+      const passBaru = (document.getElementById('inputPassBaru') as HTMLInputElement).value.trim();
+      const passKonfirmasi = (document.getElementById('inputPassKonfirmasi') as HTMLInputElement).value.trim();
+
+      if (passBaru.length < 4) return showPasswordMsg("❌ Password baru minimal 4 karakter!", false);
+      if (passBaru !== passKonfirmasi) return showPasswordMsg("❌ Konfirmasi password tidak cocok!", false);
+      if (passLama === passBaru) return showPasswordMsg("❌ Password baru harus berbeda dari password lama!", false);
+
+      if (btnSubmit) btnSubmit.disabled = true;
+      if (btnSubmitText) btnSubmitText.innerText = "Menyimpan...";
+      passwordMsg?.classList.add('hidden');
+
+      try {
+        const qrEl = document.getElementById('qrcode');
+        const userIdStr = qrEl ? qrEl.getAttribute('data-uid') : null;
+        const body = new URLSearchParams({
+          action: 'ubah_password',
+          id_user: userIdStr ?? '',
+          password_lama: passLama,
+          password_baru: passBaru
+        });
+
+        const response = await fetch(GOOGLE_API_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: body.toString()
+        });
+
+        const result = await response.text();
+        
+        if (result.includes('KATA_KUNCI_SUKSES')) {
+          showPasswordMsg("✅ " + result.replace('KATA_KUNCI_SUKSES: ', ''), true);
+          formPassword?.reset();
+          setTimeout(() => { window.location.href = '/'; }, 2500);
+        } else {
+          showPasswordMsg("❌ " + result.replace('KATA_KUNCI_GAGAL: ', ''), false);
+        }
+      } catch (err) {
+        showPasswordMsg("❌ Terjadi kesalahan jaringan. Coba lagi.", false);
+      } finally {
+        if (btnSubmit) btnSubmit.disabled = false;
+        if (btnSubmitText) btnSubmitText.innerText = "Simpan Password Baru";
+      }
+    });
+
+    // ====== QR CODE GENERATOR ======
     window.addEventListener('DOMContentLoaded', () => {
       const qrContainer = document.getElementById('qrcode');
+      if (!qrContainer) return;
       const userIdStr = qrContainer.getAttribute('data-uid');
-      if(userIdStr) {
+      // @ts-ignore - QRCode is loaded via CDN script tag
+      if (userIdStr && typeof QRCode !== 'undefined') {
         const qrSize = window.innerWidth < 640 ? 160 : 180;
-        
+        // @ts-ignore
         new QRCode(qrContainer, {
           text: userIdStr,
           width: qrSize,
           height: qrSize,
-          colorDark : "#0f172a", // Warna hitam pekat agar kamera IoT gampang mendeteksi
+          colorDark : "#0f172a",
           colorLight : "#ffffff",
+          // @ts-ignore
           correctLevel : QRCode.CorrectLevel.H
         });
       }

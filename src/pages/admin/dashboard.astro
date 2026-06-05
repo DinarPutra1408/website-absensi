@@ -33,7 +33,8 @@ try {
     databaseSemuaUser = allUsers.map((u: Record<string, any>) => ({
       id: u.ID_User,
       nama: u.Nama,
-      status: u.Status_Hari_Ini
+      status: u.Status_Hari_Ini,
+      kelompok: u.Kelompok || u.NamaKelompok || u.Nama_Kelompok || u.kelompok || '-'
     }));
 
     // Ambil data yang Hadir ATAU Izin untuk ditampilkan di tabel
@@ -353,34 +354,75 @@ try {
     document.getElementById('btnKirimWA')?.addEventListener('click', () => {
       if(masterListHadir.length === 0) return alert("Belum ada data kehadiran/izin hari ini!");
       const waText = generateWASummary();
-      // Membuka WA Web / Aplikasi dengan teks yang sudah di-generate
       window.open(`https://wa.me/?text=${waText}`, '_blank');
     });
 
-    // FUNGSI GENERATE TEKS WA
+    // FUNGSI GENERATE TEKS WA - UPDATED WITH PERCENTAGE PER KELOMPOK
     function generateWASummary() {
       const today = new Date().toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
       
-      const kelompokMap = {};
+      // Hitung total muda mudi
+      const totalMudaMudi = databaseMudaMudi.length;
+      const totalHadir = masterListHadir.filter(u => u.Status === 'Hadir').length;
+      const totalIzin = masterListHadir.filter(u => u.Status === 'Izin').length;
+      const totalTidakHadir = totalMudaMudi - totalHadir - totalIzin;
+      
+      const pctHadir = totalMudaMudi > 0 ? Math.round((totalHadir / totalMudaMudi) * 100) : 0;
+      const pctIzin = totalMudaMudi > 0 ? Math.round((totalIzin / totalMudaMudi) * 100) : 0;
+      const pctTidakHadir = totalMudaMudi > 0 ? Math.round((totalTidakHadir / totalMudaMudi) * 100) : 0;
+
+      // Hitung statistik per kelompok
+      const kelompokStats = {};
+      databaseMudaMudi.forEach(u => {
+        const k = u.kelompok || 'Lainnya';
+        if (!kelompokStats[k]) {
+          kelompokStats[k] = { total: 0, hadir: 0, izin: 0 };
+        }
+        kelompokStats[k].total++;
+      });
+
+      masterListHadir.forEach(u => {
+        const k = u.Kelompok || 'Lainnya';
+        if (!kelompokStats[k]) {
+          kelompokStats[k] = { total: 0, hadir: 0, izin: 0 };
+        }
+        if (u.Status === 'Hadir') kelompokStats[k].hadir++;
+        else if (u.Status === 'Izin') kelompokStats[k].izin++;
+      });
+
       // Urutkan data berdasarkan Kelompok lalu Gender
       const sortedData = [...masterListHadir].sort((a,b) => {
         if(a.Kelompok !== b.Kelompok) return a.Kelompok.localeCompare(b.Kelompok);
         return a.Gender.localeCompare(b.Gender);
       });
 
+      const kelompokMap = {};
       sortedData.forEach(u => {
-        if(u.Status !== 'Hadir') return; // Hanya masukkan yang Hadir ke daftar utama
+        if(u.Status !== 'Hadir') return;
         const k = u.Kelompok || 'Lainnya';
         if(!kelompokMap[k]) kelompokMap[k] = { 'Laki-laki': [], 'Perempuan': [] };
         const g = u.Gender || 'Laki-laki';
         kelompokMap[k][g].push(u.Nama);
       });
 
-      let text = `*REKAP ABSENSI PENGAJIAN*\n🗓️ Hari/Tanggal: ${today}\n\n`;
+      let text = `*REKAP ABSENSI PENGAJIAN*\n`;
+      text += `🗓️ Hari/Tanggal: ${today}\n\n`;
 
+      // RINGKASAN KESELURUHAN
+      text += `📊 *RINGKASAN KESELURUHAN:*\n`;
+      text += `Total Muda Mudi: ${totalMudaMudi} orang\n`;
+      text += `✅ Hadir: ${totalHadir} orang (${pctHadir}%)\n`;
+      text += `📝 Izin: ${totalIzin} orang (${pctIzin}%)\n`;
+      text += `❌ Tidak Hadir: ${totalTidakHadir} orang (${pctTidakHadir}%)\n\n`;
+
+      // DETAIL PER KELOMPOK
       let noKel = 1;
       for (const k in kelompokMap) {
-        text += `*KELOMPOK ${noKel}.*\n${k} :\n`;
+        const stats = kelompokStats[k] || { total: 0, hadir: 0, izin: 0 };
+        const pctKelompok = stats.total > 0 ? Math.round((stats.hadir / stats.total) * 100) : 0;
+
+        text += `*KELOMPOK ${noKel}. ${k}*\n`;
+        text += `📈 Kehadiran: ${stats.hadir}/${stats.total} (${pctKelompok}%)\n\n`;
 
         text += `Laki-laki :\n`;
         if (kelompokMap[k]['Laki-laki'].length > 0) {
@@ -389,7 +431,7 @@ try {
           text += `-\n`;
         }
 
-        text += `Perempuan :\n`;
+        text += `\nPerempuan :\n`;
         if (kelompokMap[k]['Perempuan'].length > 0) {
           kelompokMap[k]['Perempuan'].forEach((nama, i) => text += `${i+1}. ${nama}\n`);
         } else {
@@ -407,7 +449,7 @@ try {
         text += `\n`;
       }
 
-      const totalHadir = masterListHadir.filter(u => u.Status === 'Hadir').length;
+      text += `─────────────────\n`;
       text += `Total Hadir Fisik: ${totalHadir} Orang.`;
 
       return encodeURIComponent(text);
@@ -480,7 +522,7 @@ try {
             : `<span class="shrink-0 px-2 py-0.5 text-[10px] font-extrabold rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 tracking-wider">HADIR</span>`;
 
           const cancelBtnClass = isIzin ? 'bg-amber-500/10 active:bg-amber-600 text-amber-500 active:text-white' : 'bg-rose-500/10 active:bg-rose-600 text-rose-500 active:text-white';
-          const cancelBtnText = isIzin ? '💌 Batal Izin' : '❌ Batal Kehadiran';
+          const cancelBtnText = isIzin ? '❌ Batal Izin' : '❌ Batal Kehadiran';
 
           return `
           <div class="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-850 rounded-xl p-4 shadow-sm space-y-3 font-sans">
@@ -624,7 +666,7 @@ try {
       const targetBtn = e.target.closest('.btn-quick-absen');
       if (!targetBtn) return;
       const idUser = targetBtn.getAttribute('data-id-absen');
-      const action = targetBtn.getAttribute('data-action') || 'absen'; // Ambil action (absen atau izin)
+      const action = targetBtn.getAttribute('data-action') || 'absen';
       if(idUser) {
         resultsContainer.classList.add('hidden');
         await triggerAPI({ action: action, id_user: idUser });
