@@ -344,6 +344,33 @@ if (Astro.request.method === "POST") {
     }
     .info-val-id-portrait { font-size: 0.9rem; font-weight: 700; color: var(--card-text-id); font-family: 'Courier New', Courier, monospace; letter-spacing: 0.5px; margin-top: 2px; }
     
+    /* 🔥 BARU: Badge Role di ID Card */
+    .info-val-role-portrait {
+      display: inline-block;
+      margin-top: 6px;
+      padding: 3px 10px;
+      font-size: 0.65rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      border-radius: 20px;
+      background: linear-gradient(90deg, #6366f1, #a855f7);
+      color: white;
+      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+    }
+    .info-val-role-portrait.role-admin {
+      background: linear-gradient(90deg, #ef4444, #f97316);
+      box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+    }
+    .info-val-role-portrait.role-bendahara {
+      background: linear-gradient(90deg, #10b981, #059669);
+      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+    }
+    .info-val-role-portrait.role-user {
+      background: linear-gradient(90deg, #6366f1, #a855f7);
+      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+    }
+    
     .card-footer-text-portrait { font-size: 0.55rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 1px; border-top: 1px solid var(--container-border); width: 100%; padding-top: 8px; }
 
     .action-group { display: flex; flex-direction: column; gap: 10px; margin-top: 15px; }
@@ -413,6 +440,15 @@ if (Astro.request.method === "POST") {
               
               <div class="info-label-portrait">Nomor Registrasi ID</div>
               <div class="info-val-id-portrait">{cardData.id || "TANPA_ID"}</div>
+              
+              {/* 🔥 BARU: Badge Role */}
+              <span class={`info-val-role-portrait ${
+                cardData.role === 'Admin' ? 'role-admin' : 
+                cardData.role === 'Bendahara' ? 'role-bendahara' : 
+                'role-user'
+              }`}>
+                {cardData.role || 'User'}
+              </span>
             </div>
             
             <div class="card-footer-text-portrait">Sistem Absensi</div>
@@ -461,12 +497,17 @@ if (Astro.request.method === "POST") {
     });
 
     // 3. LOGIKA REDIRECT & CARD GENERATOR
+    // 🔥 DIPERBAIKI: Tambahkan redirect untuk role Bendahara
     function alihkanKeDashboard() {
       const namaEnc = encodeURIComponent(cardData.nama);
       const idEnc = encodeURIComponent(cardData.id);
+      const roleEnc = encodeURIComponent(cardData.role);
       
       if (cardData.role === "Admin") {
         window.location.href = `/admin/dashboard?nama=${namaEnc}`;
+      } else if (cardData.role === "Bendahara") {
+        // 🔥 BARU: Redirect bendahara ke dashboard khusus bendahara
+        window.location.href = `/bendahara/dashboard?nama=${namaEnc}`;
       } else {
         window.location.href = `/user/dashboard?id=${idEnc}&nama=${namaEnc}`;
       }

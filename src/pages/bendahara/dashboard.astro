@@ -1,0 +1,579 @@
+---
+import '../../global.css';
+
+const GOOGLE_API_URL = import.meta.env.PUBLIC_SECRET_SHEETS_API_URL;
+const bendaharaNama = Astro.url.searchParams.get('nama') || 'Bendahara';
+---
+
+<!DOCTYPE html>
+<html lang="id" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard Bendahara - MM Tandes Barat</title>
+
+  <link rel="manifest" href="/manifest.webmanifest" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="AbsensiMM" />
+<link rel="apple-touch-icon" href="/pwa-192x192.png" />
+  
+  
+  <!-- Library untuk Export Excel -->
+  <script is:inline src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
+  <script is:inline src="https://cdn.tailwindcss.com"></script>
+  <script is:inline>
+    tailwind.config = { darkMode: 'class' }
+    const savedTheme = localStorage.getItem('theme') || 'dark';
+    if (savedTheme === 'light') document.documentElement.classList.remove('dark');
+    else document.documentElement.classList.add('dark');
+  </script>
+</head>
+<body class="bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 min-h-screen p-4 transition-colors duration-300">
+  
+  <div class="max-w-7xl mx-auto" id="bendaharaDashboard" data-api={GOOGLE_API_URL} data-nama={bendaharaNama}>
+    
+    <!-- Header -->
+    <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 pb-5 mb-6 border-b border-slate-200 dark:border-slate-800">
+      <div>
+        <h1 class="text-xl md:text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Dashboard <span class="text-emerald-600 dark:text-emerald-400">Bendahara</span></h1>
+        <p class="text-xs text-slate-500 dark:text-slate-400">Halo, <b class="text-slate-700 dark:text-slate-300">{bendaharaNama}</b> — Sistem RAB & Keuangan Internal</p>
+      </div>
+      <div class="flex items-center gap-2">
+        <button id="themeToggleBtn" class="w-10 h-10 flex items-center justify-center rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-lg hover:bg-slate-100 dark:hover:bg-slate-800 shadow-sm transition-all">🌙</button>
+        <a href="/" class="px-4 py-2 bg-rose-500 hover:bg-rose-600 text-white text-xs font-semibold rounded-xl shadow-md transition-all">Keluar</a>
+      </div>
+    </header>
+
+    <!-- Tabs Navigation -->
+    <div class="flex gap-2 mb-6 overflow-x-auto pb-2">
+      <button id="tabRAB" class="tab-btn flex-1 min-w-[110px] py-2.5 bg-emerald-500 text-white text-sm font-bold rounded-xl shadow-md transition-all">Buat RAB</button>
+      <button id="tabKeuangan" class="tab-btn flex-1 min-w-[110px] py-2.5 bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-sm font-bold rounded-xl transition-all">Keuangan</button>
+      <button id="tabHistory" class="tab-btn flex-1 min-w-[110px] py-2.5 bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-sm font-bold rounded-xl transition-all">History RAB</button>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- KONTEN 1: FORM RAB -->
+    <!-- ========================================== -->
+    <div id="kontenRAB" class="konten-tab space-y-6">
+
+      <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
+        <div class="border-l-4 border-emerald-500 pl-3 mb-6">
+          <h2 class="text-sm font-bold text-slate-900 dark:text-white">Buat Rencana Anggaran Biaya (RAB)</h2>
+          <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Isi detail pengeluaran, lalu export Excel untuk diajukan ke pengurus.</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+          <div>
+            <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Nama Kegiatan</label>
+            <input type="text" id="rabNamaKegiatan" placeholder="Contoh: Pengajian Akbar Ramadhan" class="w-full p-3 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none"/>
+          </div>
+          <div>
+            <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Tanggal Pengajuan</label>
+            <input type="date" id="rabTanggal" class="w-full p-3 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none"/>
+          </div>
+        </div>
+
+        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-4 border-b border-slate-200 dark:border-slate-700 pb-2">Detail Pengeluaran</h3>
+        
+        <div id="rabItemsContainer" class="space-y-4 mb-6">
+          <!-- Item akan ditambahkan di sini -->
+        </div>
+
+        <button id="btnAddItem" class="w-full py-3 border-2 border-dashed border-emerald-500 text-emerald-600 dark:text-emerald-400 text-sm font-bold rounded-xl hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-all">
+          + Tambah Item Pengeluaran
+        </button>
+
+        <!-- Total -->
+        <div class="mt-6 p-4 bg-emerald-50 dark:bg-emerald-900/20 rounded-xl border border-emerald-200 dark:border-emerald-800 flex justify-between items-center">
+          <span class="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Total Keseluruhan</span>
+          <span id="rabTotalKeseluruhan" class="text-2xl font-extrabold text-emerald-600 dark:text-emerald-400">Rp0</span>
+        </div>
+
+        <!-- Actions -->
+        <div class="flex flex-col sm:flex-row gap-3 mt-6">
+          <button id="btnSimpanRAB" class="flex-1 py-3 bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-bold rounded-xl shadow-sm transition-all">
+            Simpan ke Database
+          </button>
+          <button id="btnExportExcel" class="flex-1 py-3 bg-blue-500 hover:bg-blue-600 text-white text-sm font-bold rounded-xl shadow-sm transition-all">
+            Export Excel
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- KONTEN 2: KEUANGAN INTERNAL -->
+    <!-- ========================================== -->
+    <div id="kontenKeuangan" class="konten-tab space-y-6 hidden">
+
+      <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
+        <div class="border-l-4 border-blue-500 pl-3 mb-6">
+          <h2 class="text-sm font-bold text-slate-900 dark:text-white">Keuangan Internal (Kas Harian)</h2>
+          <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Catat pemasukan (Debet) dan pengeluaran (Kredit) kas organisasi.</p>
+        </div>
+
+        <form id="formTransaksi" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Tanggal</label>
+            <input type="date" id="transTanggal" required class="w-full p-3 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl text-sm"/>
+          </div>
+          <div>
+            <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Jenis Transaksi</label>
+            <select id="transJenis" class="w-full p-3 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl text-sm">
+              <option value="debet">Pemasukan (Debet)</option>
+              <option value="kredit">Pengeluaran (Kredit)</option>
+            </select>
+          </div>
+          <div class="md:col-span-2">
+            <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Keterangan</label>
+            <input type="text" id="transKeterangan" placeholder="Contoh: Kas dari iuran anggota" required class="w-full p-3 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl text-sm"/>
+          </div>
+          <div>
+            <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Jumlah (Rp)</label>
+            <input type="number" id="transJumlah" placeholder="0" required min="0" class="w-full p-3 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl text-sm"/>
+          </div>
+          <div class="flex items-end">
+            <button type="submit" class="w-full py-3 bg-blue-500 hover:bg-blue-600 text-white text-sm font-bold rounded-xl shadow-sm transition-all">
+              Simpan Transaksi
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead class="bg-slate-100 dark:bg-slate-900 text-slate-500 dark:text-slate-400 text-xs font-bold uppercase">
+              <tr>
+                <th class="p-4 text-left">Tanggal</th>
+                <th class="p-4 text-left">Keterangan</th>
+                <th class="p-4 text-right">Debet</th>
+                <th class="p-4 text-right">Kredit</th>
+                <th class="p-4 text-right">Saldo</th>
+              </tr>
+            </thead>
+            <tbody id="tabelKeuangan" class="divide-y divide-slate-200 dark:divide-slate-700">
+              <tr><td colspan="5" class="p-8 text-center text-slate-400">Belum ada transaksi</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- KONTEN 3: HISTORY RAB & UPDATE STATUS -->
+    <!-- ========================================== -->
+    <div id="kontenHistory" class="konten-tab space-y-6 hidden">
+
+      <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
+        <div class="p-5 border-b border-slate-200 dark:border-slate-700">
+          <div class="border-l-4 border-indigo-500 pl-3">
+            <h2 class="text-sm font-bold text-slate-900 dark:text-white">History Pengajuan RAB</h2>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Update status persetujuan setelah mendapat persetujuan offline dari pengurus.</p>
+          </div>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead class="bg-slate-100 dark:bg-slate-900 text-slate-500 dark:text-slate-400 text-xs font-bold uppercase">
+              <tr>
+                <th class="p-4 text-left">Tanggal</th>
+                <th class="p-4 text-left">Kegiatan</th>
+                <th class="p-4 text-right">Total</th>
+                <th class="p-4 text-center">Status</th>
+                <th class="p-4 text-center">Disetujui Oleh</th>
+                <th class="p-4 text-center">Aksi</th>
+              </tr>
+            </thead>
+            <tbody id="tabelHistoryRAB" class="divide-y divide-slate-200 dark:divide-slate-700">
+              <tr><td colspan="6" class="p-8 text-center text-slate-400">Belum ada RAB</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Modal Update Status Persetujuan -->
+  <div id="modalUpdateStatus" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-slate-900 rounded-2xl p-6 max-w-md w-full shadow-2xl border border-slate-200 dark:border-slate-700">
+      <h3 class="text-lg font-bold mb-4">Update Status Persetujuan</h3>
+      <p class="text-sm text-slate-500 mb-4">Isi data setelah mendapat persetujuan secara offline.</p>
+      
+      <input type="hidden" id="updateRowIndex">
+      
+      <div class="space-y-4">
+        <div>
+          <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Status Persetujuan</label>
+          <select id="updateStatus" class="w-full p-3 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-sm">
+            <option value="Diajukan">Diajukan (Belum diproses)</option>
+            <option value="Disetujui">Disetujui</option>
+            <option value="Ditolak">Ditolak</option>
+            <option value="Revisi">Perlu Revisi</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Disetujui Oleh (Nama Pengurus)</label>
+          <input type="text" id="updateDisetujuiOleh" placeholder="Contoh: Pak RT / Ketua Organisasi" class="w-full p-3 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-sm"/>
+        </div>
+      </div>
+
+      <div class="flex gap-3 mt-6">
+        <button id="btnBatalUpdate" class="flex-1 py-2.5 bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold rounded-xl">Batal</button>
+        <button id="btnSimpanUpdate" class="flex-1 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-xl">Simpan</button>
+      </div>
+    </div>
+  </div>
+
+  <script is:inline>
+    // @ts-nocheck
+    const API_URL = document.getElementById('bendaharaDashboard')?.getAttribute('data-api') || '';
+    const bendaharaNama = document.getElementById('bendaharaDashboard')?.getAttribute('data-nama') || 'Bendahara';
+    let rabCounter = 0;
+
+    // Set default date to today
+    const rabTanggalEl = document.getElementById('rabTanggal');
+    if (rabTanggalEl) rabTanggalEl.valueAsDate = new Date();
+    const transTanggalEl = document.getElementById('transTanggal');
+    if (transTanggalEl) transTanggalEl.valueAsDate = new Date();
+
+    // --- TAB SWITCHER ---
+    const tabs = document.querySelectorAll('.tab-btn');
+    const kontens = document.querySelectorAll('.konten-tab');
+
+    tabs.forEach(function(tab) {
+      tab.addEventListener('click', function() {
+        tabs.forEach(function(t) { t.className = 'tab-btn flex-1 min-w-[110px] py-2.5 bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-sm font-bold rounded-xl transition-all'; });
+        kontens.forEach(function(k) { k.classList.add('hidden'); });
+        
+        tab.className = 'tab-btn flex-1 min-w-[110px] py-2.5 bg-emerald-500 text-white text-sm font-bold rounded-xl shadow-md transition-all';
+        const kontenEl = document.getElementById(tab.id.replace('tab', 'konten'));
+        if (kontenEl) kontenEl.classList.remove('hidden');
+      });
+    });
+
+    // --- FITUR RAB ---
+    function addRABItem() {
+      rabCounter++;
+      const container = document.getElementById('rabItemsContainer');
+      if (!container) return;
+      const itemDiv = document.createElement('div');
+      itemDiv.className = 'p-4 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 space-y-3 relative group';
+      itemDiv.innerHTML = `
+        <button type="button" onclick="this.parentElement.remove(); calculateTotal();" class="absolute top-2 right-2 w-6 h-6 flex items-center justify-center bg-rose-500/10 text-rose-500 rounded-full hover:bg-rose-500 hover:text-white transition-all text-xs font-bold">✕</button>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div class="md:col-span-2">
+            <label class="block text-[10px] font-bold uppercase text-slate-400 mb-1">Kategori / Jenis Pengeluaran</label>
+            <input type="text" class="rab-kategori w-full p-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-sm" placeholder="Contoh: Belanja Bahan Habis Pakai"/>
+          </div>
+          <div class="md:col-span-2">
+            <label class="block text-[10px] font-bold uppercase text-slate-400 mb-1">Nama Item</label>
+            <input type="text" class="rab-jenis w-full p-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-sm" placeholder="Contoh: Papan akrilik"/>
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold uppercase text-slate-400 mb-1">Volume</label>
+            <input type="number" class="rab-volume w-full p-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-sm" placeholder="0" min="0" oninput="calculateTotal()"/>
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold uppercase text-slate-400 mb-1">Satuan</label>
+            <input type="text" class="rab-satuan w-full p-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-sm" placeholder="unit/meter/box"/>
+          </div>
+          <div class="md:col-span-2">
+            <label class="block text-[10px] font-bold uppercase text-slate-400 mb-1">Harga Satuan (Rp)</label>
+            <input type="number" class="rab-harga w-full p-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-sm" placeholder="0" min="0" oninput="calculateTotal()"/>
+          </div>
+        </div>
+      `;
+      container.appendChild(itemDiv);
+    }
+
+    function calculateTotal() {
+      let grandTotal = 0;
+      document.querySelectorAll('#rabItemsContainer > div').forEach(function(item) {
+        const volume = parseFloat(item.querySelector('.rab-volume')?.value) || 0;
+        const harga = parseFloat(item.querySelector('.rab-harga')?.value) || 0;
+        grandTotal += volume * harga;
+      });
+      const totalEl = document.getElementById('rabTotalKeseluruhan');
+      if (totalEl) totalEl.textContent = 'Rp' + grandTotal.toLocaleString('id-ID');
+    }
+
+    document.getElementById('btnAddItem')?.addEventListener('click', addRABItem);
+    addRABItem(); // Add 1 item by default
+
+    // --- EXPORT EXCEL (Format sesuai request) ---
+    document.getElementById('btnExportExcel')?.addEventListener('click', function() {
+      const namaKegiatan = document.getElementById('rabNamaKegiatan')?.value || 'RAB Kegiatan';
+      const tanggal = document.getElementById('rabTanggal')?.value || '';
+      
+      const data = [];
+      let rowNumber = 1;
+      let currentKategori = '';
+      let kategoriSubTotal = 0;
+      let grandTotal = 0;
+
+      // Header Dokumen
+      data.push(['RENCANA ANGGARAN BIAYA (RAB)']);
+      data.push(['Kegiatan: ' + namaKegiatan]);
+      data.push(['Tanggal: ' + tanggal]);
+      data.push([]);
+      
+      // Header Tabel
+      data.push(['No.', 'Jenis Pengeluaran', 'Volume', 'Satuan', 'Harga Satuan (Rp)', 'Total (Rp)']);
+
+      // Proses Items
+      const items = document.querySelectorAll('#rabItemsContainer > div');
+      items.forEach(function(item) {
+        const kategori = item.querySelector('.rab-kategori')?.value || 'Lain-lain';
+        const jenis = item.querySelector('.rab-jenis')?.value || '-';
+        const volume = parseFloat(item.querySelector('.rab-volume')?.value) || 0;
+        const satuan = item.querySelector('.rab-satuan')?.value || '-';
+        const harga = parseFloat(item.querySelector('.rab-harga')?.value) || 0;
+        const total = volume * harga;
+
+        // Jika kategori berubah, cetak SUB TOTAL kategori sebelumnya
+        if (kategori !== currentKategori && currentKategori !== '') {
+          data.push(['', '', '', '', 'SUB TOTAL', 'Rp' + kategoriSubTotal.toLocaleString('id-ID')]);
+          data.push([]); // Baris kosong pemisah
+          kategoriSubTotal = 0;
+        }
+
+        currentKategori = kategori;
+        kategoriSubTotal += total;
+        grandTotal += total;
+
+        data.push([rowNumber++, jenis, volume, satuan, harga, total]);
+      });
+
+      // SUB TOTAL kategori terakhir
+      if (currentKategori !== '') {
+        data.push(['', '', '', '', 'SUB TOTAL', 'Rp' + kategoriSubTotal.toLocaleString('id-ID')]);
+        data.push([]);
+      }
+
+      // GRAND TOTAL
+      data.push(['', '', '', '', 'TOTAL KESELURUHAN', 'Rp' + grandTotal.toLocaleString('id-ID')]);
+
+      // Buat Workbook (XLSX loaded via CDN)
+      const ws = XLSX.utils.aoa_to_sheet(data);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'RAB');
+
+      // Set lebar kolom
+      ws['!cols'] = [{wch: 5}, {wch: 40}, {wch: 10}, {wch: 10}, {wch: 18}, {wch: 20}];
+
+      // Download
+      const filename = 'RAB_' + namaKegiatan.replace(/[^a-z0-9]/gi, '_') + '_' + tanggal + '.xlsx';
+      XLSX.writeFile(wb, filename);
+    });
+
+    // --- SIMPAN RAB KE DATABASE ---
+    document.getElementById('btnSimpanRAB')?.addEventListener('click', async function() {
+      const namaKegiatan = document.getElementById('rabNamaKegiatan')?.value || '';
+      const tanggal = document.getElementById('rabTanggal')?.value || '';
+
+      if (!namaKegiatan) return alert('Mohon isi nama kegiatan!');
+      
+      const items = document.querySelectorAll('#rabItemsContainer > div');
+      if (items.length === 0) return alert('Mohon tambahkan minimal 1 item!');
+
+      let successCount = 0;
+      for (const item of items) {
+        const kategoriVal = item.querySelector('.rab-kategori')?.value || '';
+        const jenisVal = item.querySelector('.rab-jenis')?.value || '';
+        const volumeVal = item.querySelector('.rab-volume')?.value || '0';
+        const satuanVal = item.querySelector('.rab-satuan')?.value || '';
+        const hargaVal = item.querySelector('.rab-harga')?.value || '0';
+        const totalVal = (parseFloat(volumeVal) * parseFloat(hargaVal)).toString();
+
+        const payload = new URLSearchParams({
+          action: 'tambah_rab',
+          tanggal: tanggal,
+          nama_kegiatan: namaKegiatan,
+          no_item: (successCount + 1).toString(),
+          jenis_pengeluaran: kategoriVal + ' - ' + jenisVal,
+          volume: volumeVal,
+          satuan: satuanVal,
+          harga_satuan: hargaVal,
+          total: totalVal,
+          input_oleh: bendaharaNama
+        });
+
+        try {
+          await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: payload.toString() });
+          successCount++;
+        } catch (err) { console.error(err); }
+      }
+
+      alert(successCount + ' item RAB berhasil disimpan!');
+      loadHistoryRAB();
+    });
+
+    // --- FITUR KEUANGAN ---
+    document.getElementById('formTransaksi')?.addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const form = e.target;
+      const tanggal = document.getElementById('transTanggal')?.value || '';
+      const jenis = document.getElementById('transJenis')?.value || 'debet';
+      const keterangan = document.getElementById('transKeterangan')?.value || '';
+      const jumlah = parseFloat(document.getElementById('transJumlah')?.value || '0') || 0;
+
+      const payload = new URLSearchParams({
+        action: 'tambah_transaksi',
+        tanggal: tanggal,
+        kegiatan: keterangan,
+        debet: jenis === 'debet' ? jumlah.toString() : '0',
+        kredit: jenis === 'kredit' ? jumlah.toString() : '0',
+        catatan: '',
+        input_oleh: bendaharaNama
+      });
+
+      try {
+        await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: payload.toString() });
+        alert('Transaksi berhasil disimpan!');
+        if (form) form.reset();
+        const tEl = document.getElementById('transTanggal');
+        if (tEl) tEl.valueAsDate = new Date();
+        loadKeuangan();
+      } catch (err) { alert('Gagal menyimpan transaksi'); }
+    });
+
+    async function loadKeuangan() {
+      try {
+        const response = await fetch(API_URL);
+        const data = await response.json();
+        const keuanganData = data.keuangan?.data || [];
+        const tbody = document.getElementById('tabelKeuangan');
+        if (!tbody) return;
+        
+        if (keuanganData.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="5" class="p-8 text-center text-slate-400">Belum ada transaksi</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = keuanganData.map(function(item) {
+          return '<tr class="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">' +
+            '<td class="p-4">' + new Date(item.Tanggal).toLocaleDateString('id-ID') + '</td>' +
+            '<td class="p-4 font-medium">' + item.Kegiatan + '</td>' +
+            '<td class="p-4 text-right text-emerald-600 font-semibold">Rp' + (parseFloat(item.Debet) || 0).toLocaleString('id-ID') + '</td>' +
+            '<td class="p-4 text-right text-rose-600 font-semibold">Rp' + (parseFloat(item.Kredit) || 0).toLocaleString('id-ID') + '</td>' +
+            '<td class="p-4 text-right font-bold">Rp' + (parseFloat(item.Saldo) || 0).toLocaleString('id-ID') + '</td>' +
+          '</tr>';
+        }).join('');
+      } catch (err) { console.error(err); }
+    }
+
+    // --- FITUR HISTORY RAB & UPDATE STATUS OFFLINE ---
+    async function loadHistoryRAB() {
+      try {
+        const response = await fetch(API_URL);
+        const data = await response.json();
+        const rabData = data.rab?.data || [];
+        const tbody = document.getElementById('tabelHistoryRAB');
+        if (!tbody) return;
+        
+        if (rabData.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="6" class="p-8 text-center text-slate-400">Belum ada RAB</td></tr>';
+          return;
+        }
+
+        // Group by kegiatan
+        const grouped = {};
+        rabData.forEach(function(item) {
+          const key = item.Tanggal + '-' + item.Nama_Kegiatan;
+          if (!grouped[key]) {
+            grouped[key] = {
+              row_index: item.Row,
+              tanggal: item.Tanggal,
+              kegiatan: item.Nama_Kegiatan,
+              total: 0,
+              status: item.Status || 'Diajukan',
+              disetujui: item.Disetujui_Oleh || '-'
+            };
+          }
+          grouped[key].total += parseFloat(item.Total) || 0;
+        });
+
+        tbody.innerHTML = Object.values(grouped).map(function(item) {
+          let statusColor = 'bg-slate-500/10 text-slate-600';
+          if (item.status === 'Disetujui') statusColor = 'bg-emerald-500/10 text-emerald-600';
+          else if (item.status === 'Ditolak') statusColor = 'bg-rose-500/10 text-rose-600';
+          else if (item.status === 'Revisi') statusColor = 'bg-amber-500/10 text-amber-600';
+
+          return '<tr class="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">' +
+            '<td class="p-4">' + new Date(item.tanggal).toLocaleDateString('id-ID') + '</td>' +
+            '<td class="p-4 font-medium">' + item.kegiatan + '</td>' +
+            '<td class="p-4 text-right font-bold">Rp' + item.total.toLocaleString('id-ID') + '</td>' +
+            '<td class="p-4 text-center"><span class="px-2 py-1 rounded-lg text-xs font-bold ' + statusColor + '">' + item.status + '</span></td>' +
+            '<td class="p-4 text-center text-xs">' + item.disetujui + '</td>' +
+            '<td class="p-4 text-center">' +
+              '<button onclick="openModalUpdate(' + item.row_index + ', \'' + item.status + '\', \'' + item.disetujui + '\')" class="px-3 py-1.5 bg-indigo-500/10 text-indigo-600 rounded-lg text-xs font-bold hover:bg-indigo-500 hover:text-white transition-all">' +
+                'Update' +
+              '</button>' +
+            '</td>' +
+          '</tr>';
+        }).join('');
+      } catch (err) { console.error(err); }
+    }
+
+    // Modal Logic
+    const modal = document.getElementById('modalUpdateStatus');
+
+    function openModalUpdate(rowIndex, status, disetujui) {
+      const rowEl = document.getElementById('updateRowIndex');
+      const statusEl = document.getElementById('updateStatus');
+      const disetujuiEl = document.getElementById('updateDisetujuiOleh');
+      if (rowEl) rowEl.value = rowIndex;
+      if (statusEl) statusEl.value = status;
+      if (disetujuiEl) disetujuiEl.value = disetujui === '-' ? '' : disetujui;
+      if (modal) modal.classList.remove('hidden');
+    }
+
+    // Expose to global scope for inline onclick handlers
+    window.openModalUpdate = openModalUpdate;
+    window.calculateTotal = calculateTotal;
+
+    document.getElementById('btnBatalUpdate')?.addEventListener('click', function() {
+      if (modal) modal.classList.add('hidden');
+    });
+    
+    document.getElementById('btnSimpanUpdate')?.addEventListener('click', async function() {
+      const rowIndex = document.getElementById('updateRowIndex')?.value || '';
+      const status = document.getElementById('updateStatus')?.value || '';
+      const disetujui = document.getElementById('updateDisetujuiOleh')?.value || '';
+
+      const payload = new URLSearchParams({
+        action: 'update_persetujuan_rab',
+        row_index: rowIndex,
+        status: status,
+        disetujui_oleh: disetujui
+      });
+
+      try {
+        await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: payload.toString() });
+        alert('Status berhasil diupdate!');
+        if (modal) modal.classList.add('hidden');
+        loadHistoryRAB();
+      } catch (err) { alert('Gagal update status'); }
+    });
+
+    // Theme Toggle
+    const htmlEl = document.documentElement;
+    const themeToggleBtn = document.getElementById('themeToggleBtn');
+    if (themeToggleBtn) {
+      themeToggleBtn.innerText = htmlEl.classList.contains('dark') ? '🌙' : '☀️';
+      themeToggleBtn.addEventListener('click', function() {
+        const isDark = htmlEl.classList.toggle('dark');
+        localStorage.setItem('theme', isDark ? 'dark' : 'light');
+        themeToggleBtn.innerText = isDark ? '🌙' : '☀️';
+      });
+    }
+
+    // Initial Load
+    loadHistoryRAB();
+    loadKeuangan();
+  </script>
+</body>
+</html>
