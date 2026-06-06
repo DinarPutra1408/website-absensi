@@ -255,7 +255,7 @@ try {
         </div>
       </div>
 
-      <div class="hidden md:block overflow-x-auto w-full rounded-xl border border-slate-100 dark:border-slate-800">
+      <div class="overflow-x-auto w-full rounded-xl border border-slate-100 dark:border-slate-800">
         <table class="w-full text-left border-collapse min-w-[650px]">
           <thead>
             <tr class="bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 text-[11px] font-bold uppercase tracking-wider">
@@ -268,11 +268,9 @@ try {
               <th class="p-3.5 text-center">Aksi</th>
             </tr>
           </thead>
-          <tbody id="bodyTabelHadirDesktop" class="divide-y divide-slate-200 dark:divide-slate-800"></tbody>
+          <tbody id="bodyTabelHadir" class="divide-y divide-slate-200 dark:divide-slate-800"></tbody>
         </table>
       </div>
-
-      <div id="bodyTabelHadirMobile" class="block md:hidden space-y-3"></div>
     </div>
   </div>
 
@@ -319,6 +317,51 @@ try {
   <div id="user_db_payload" data-json={JSON.stringify(databaseSemuaUser)}></div>
   <div id="hadir_hari_ini_payload" data-json={JSON.stringify(awalHadirHariIni)}></div>
 
+  <!-- Modal Profil User -->
+  <div id="modalProfilUser" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[999] hidden items-center justify-center p-4">
+    <div class="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-sm shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+      <!-- Header -->
+      <div class="bg-indigo-600 p-5 text-white relative">
+        <button id="btnTutupProfil" class="absolute top-3 right-3 w-7 h-7 flex items-center justify-center rounded-full bg-white/20 hover:bg-white/30 text-white text-xs font-bold transition-all">✕</button>
+        <div id="profilNama" class="text-lg font-extrabold tracking-tight">-</div>
+        <div id="profilId" class="text-xs font-mono text-indigo-200 mt-0.5">-</div>
+        <div class="flex items-center gap-2 mt-2">
+          <span id="profilGenderBadge" class="px-2 py-0.5 bg-white/20 text-white text-[10px] font-bold rounded-full">-</span>
+          <span id="profilKelompokBadge" class="px-2 py-0.5 bg-white/20 text-white text-[10px] font-bold rounded-full">-</span>
+        </div>
+      </div>
+      <!-- Stats -->
+      <div class="p-5 space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div class="bg-slate-50 dark:bg-slate-800 rounded-xl p-3 text-center">
+            <div id="profilTotalHadir" class="text-2xl font-extrabold text-indigo-600 dark:text-indigo-400">-</div>
+            <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mt-0.5">Total Hadir</div>
+          </div>
+          <div class="bg-slate-50 dark:bg-slate-800 rounded-xl p-3 text-center">
+            <div id="profilStatusHariIni" class="text-sm font-extrabold">-</div>
+            <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mt-0.5">Status Hari Ini</div>
+          </div>
+        </div>
+        <!-- Progress kehadiran vs target -->
+        <div>
+          <div class="flex justify-between text-xs font-semibold mb-1.5">
+            <span class="text-slate-600 dark:text-slate-400">Capaian vs Target Bulan Ini</span>
+            <span id="profilPctLabel" class="text-slate-900 dark:text-white">0%</span>
+          </div>
+          <div class="bg-slate-200 dark:bg-slate-700 h-2.5 rounded-full overflow-hidden">
+            <div id="profilProgressBar" class="bg-indigo-500 h-full rounded-full transition-all duration-500" style="width:0%"></div>
+          </div>
+          <div id="profilProgressLabel" class="text-[10px] text-slate-400 mt-1">0 / 0 hari</div>
+        </div>
+        <!-- Link ke dashboard user -->
+        <a id="profilLinkDashboard" href="#" target="_blank"
+          class="block w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl text-center transition-all shadow-sm">
+          Lihat Dashboard Lengkap
+        </a>
+      </div>
+    </div>
+  </div>
+
 <script is:inline>
   const htmlEl = document.documentElement;
   const themeToggleBtn = document.getElementById('themeToggleBtn');
@@ -347,8 +390,8 @@ try {
     const mobGender = document.getElementById('mobileFilterGender');
     const mobKelompok = document.getElementById('mobileFilterKelompok');
     
-    const tbodyDesktop = document.getElementById('bodyTabelHadirDesktop');
-    const tbodyMobile = document.getElementById('bodyTabelHadirMobile');
+    const tbodyDesktop = document.getElementById('bodyTabelHadir');
+    const tbodyMobile = null;
     const statusLabel = document.getElementById('filterStatusLabel');
 
     let currentGender = 'Semua';
@@ -489,7 +532,6 @@ try {
 
       if (dataTerfilter.length === 0) {
         if (tbodyDesktop) tbodyDesktop.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-xs text-slate-400">Tidak ada data jemaah yang cocok.</td></tr>`;
-        if (tbodyMobile) tbodyMobile.innerHTML = `<div class="p-6 text-center text-xs font-semibold text-slate-400 border border-dashed border-slate-200 dark:border-slate-800 rounded-xl">Tidak ada data jemaah yang cocok.</div>`;
         return;
       }
 
@@ -516,51 +558,6 @@ try {
               <button data-id="${u.ID_User}" data-status="${u.Status}" class="btn-batal-absen px-2.5 py-1 ${cancelBtnClass} rounded-lg text-[11px] font-bold transition-all">${cancelBtnText}</button>
             </td>
           </tr>
-        `}).join('');
-      }
-
-      // 2. RENDER MOBILE CARD VIEW
-      if (tbodyMobile) {
-        tbodyMobile.innerHTML = dataTerfilter.map(u => {
-          const isIzin = u.Status === 'Izin';
-          const statusBadge = isIzin 
-            ? `<span class="shrink-0 px-2 py-0.5 text-[10px] font-extrabold rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 tracking-wider">IZIN</span>`
-            : `<span class="shrink-0 px-2 py-0.5 text-[10px] font-extrabold rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 tracking-wider">HADIR</span>`;
-
-          const cancelBtnClass = isIzin ? 'bg-amber-500/10 active:bg-amber-600 text-amber-500 active:text-white' : 'bg-rose-500/10 active:bg-rose-600 text-rose-500 active:text-white';
-          const cancelBtnText = isIzin ? '❌ Batal Izin' : '❌ Batal Kehadiran';
-
-          return `
-          <div class="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-850 rounded-xl p-4 shadow-sm space-y-3 font-sans">
-            <div class="flex justify-between items-start gap-2">
-              <div class="overflow-hidden">
-                <h4 class="text-sm font-bold text-slate-900 dark:text-white tracking-tight truncate">${u.Nama}</h4>
-                <p class="text-[11px] font-semibold text-purple-600 dark:text-purple-400 mt-0.5">${u.ID_User}</p>
-              </div>
-              ${statusBadge}
-            </div>
-            
-            <div class="grid grid-cols-3 gap-2 pt-2.5 border-t border-slate-200 dark:border-slate-800">
-              <div>
-                <span class="text-[10px] text-slate-400 dark:text-slate-500 block uppercase font-bold tracking-tight">Gender</span>
-                <span class="text-xs font-bold ${u.Gender === 'Perempuan' ? 'text-pink-500' : 'text-blue-500'}">${u.Gender}</span>
-              </div>
-              <div>
-                <span class="text-[10px] text-slate-400 dark:text-slate-500 block uppercase font-bold tracking-tight">Kelompok</span>
-                <span class="text-xs font-bold text-slate-800 dark:text-slate-200 truncate block">${u.Kelompok}</span>
-              </div>
-              <div>
-                <span class="text-[10px] text-slate-400 dark:text-slate-500 block uppercase font-bold tracking-tight">Total Rekap</span>
-                <span class="text-xs font-bold text-indigo-600 dark:text-indigo-400">${u.Total_Hadir} Hari</span>
-              </div>
-            </div>
-
-            <div class="pt-1">
-              <button data-id="${u.ID_User}" data-status="${u.Status}" class="btn-batal-absen w-full py-2.5 ${cancelBtnClass} rounded-xl text-xs font-bold tracking-wide transition-all flex items-center justify-center gap-1.5 shadow-sm">
-                ${cancelBtnText}
-              </button>
-            </div>
-          </div>
         `}).join('');
       }
 
@@ -710,6 +707,9 @@ try {
                 <button type="button" data-id-absen="${item.id}" data-action="izin" class="btn-quick-absen text-[11px] font-bold px-3 py-1.5 rounded-lg transition-all ${sudahIzin ? 'bg-amber-500/10 text-amber-500 cursor-not-allowed opacity-60' : 'bg-amber-500 hover:bg-amber-600 text-white shadow-sm hover:shadow'}" ${sudahIzin ? 'disabled' : ''}>
                   ${sudahIzin ? '📝 Izin' : '📝 Izin'}
                 </button>
+                <button type="button" onclick="bukaProfilUser('${item.id}')" class="text-[11px] font-bold px-3 py-1.5 rounded-lg bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-500 hover:text-white transition-all">
+                  Profil
+                </button>
               </div>
             </div>
           </div>`;
@@ -765,6 +765,66 @@ try {
         await triggerAPI({ action: 'absen', id_user: decodedText.trim() });
       }, () => {});
     }
+
+    // ==========================================
+    // MODAL PROFIL USER
+    // ==========================================
+    const modalProfil = document.getElementById('modalProfilUser');
+
+    function bukaProfilUser(userId) {
+      const user = databaseMudaMudi.find(u => u.id === userId);
+      if (!user) return;
+
+      // Cari data hadir dari masterListHadir
+      const hadirData = masterListHadir.find(u => u.ID_User === userId);
+      const totalHadir = hadirData ? hadirData.Total_Hadir : (user.total_hadir || 0);
+      const statusHariIni = user.status || 'Belum Hadir';
+
+      // target dari halaman (ambil dari input target)
+      const targetBulan = parseInt(document.getElementById('target_harian')?.value || '2') || 2;
+      const pct = Math.min(100, Math.round((totalHadir / targetBulan) * 100));
+
+      document.getElementById('profilNama').textContent = user.nama || '-';
+      document.getElementById('profilId').textContent = 'ID: ' + (user.id || '-');
+      document.getElementById('profilGenderBadge').textContent = user.gender || '-';
+      document.getElementById('profilKelompokBadge').textContent = user.kelompok || '-';
+      document.getElementById('profilTotalHadir').textContent = totalHadir + ' Hari';
+
+      const statusEl = document.getElementById('profilStatusHariIni');
+      if (statusHariIni === 'Hadir') {
+        statusEl.textContent = '✓ Hadir';
+        statusEl.className = 'text-sm font-extrabold text-emerald-500';
+      } else if (statusHariIni === 'Izin') {
+        statusEl.textContent = '📝 Izin';
+        statusEl.className = 'text-sm font-extrabold text-amber-500';
+      } else {
+        statusEl.textContent = '— Belum';
+        statusEl.className = 'text-sm font-extrabold text-slate-400';
+      }
+
+      document.getElementById('profilPctLabel').textContent = pct + '%';
+      document.getElementById('profilProgressBar').style.width = pct + '%';
+      document.getElementById('profilProgressLabel').textContent = totalHadir + ' / ' + targetBulan + ' hari';
+
+      const linkDashboard = document.getElementById('profilLinkDashboard');
+      linkDashboard.href = '/user/dashboard?id=' + encodeURIComponent(user.id) + '&nama=' + encodeURIComponent(user.nama);
+
+      modalProfil.classList.remove('hidden');
+      modalProfil.classList.add('flex');
+    }
+
+    document.getElementById('btnTutupProfil')?.addEventListener('click', () => {
+      modalProfil.classList.add('hidden');
+      modalProfil.classList.remove('flex');
+    });
+    modalProfil?.addEventListener('click', (e) => {
+      if (e.target === modalProfil) {
+        modalProfil.classList.add('hidden');
+        modalProfil.classList.remove('flex');
+      }
+    });
+
+    window.bukaProfilUser = bukaProfilUser;
   });
 </script>
 </body>
