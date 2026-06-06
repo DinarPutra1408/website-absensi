@@ -22,9 +22,9 @@ export default defineConfig({
         enabled: true // <-- TAMBAHKAN BARIS INI BIAR DI LOKAL GA 404 LAGI!
       },
       manifest: {
-        name: 'Absensi MM Tandes Barat',
-        short_name: 'AbsensiMM',
-        description: 'Aplikasi Absensi MM Desa Tandes Barat',
+        name: 'MM Tandes Barat',
+        short_name: 'MM Tandes',
+        description: 'Sistem Manajemen Muda Mudi Desa Tandes Barat',
         theme_color: '#090d16', 
         background_color: '#090d16',
         display: 'standalone',
