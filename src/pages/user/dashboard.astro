@@ -90,24 +90,80 @@ const pctHadir3Bln = Math.min(100, Math.round((userStats.Total_Hadir / (targets.
       height: auto;
       display: block;
     }
+    
+    @keyframes bell-ring {
+      0%, 100% { transform: rotate(0); }
+      10%, 30% { transform: rotate(-15deg); }
+      20%, 40% { transform: rotate(15deg); }
+      50% { transform: rotate(0); }
+    }
+    
+    .bell-animate {
+      animation: bell-ring 0.8s ease-in-out;
+    }
+    
+    @keyframes pulse-dot {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.2); opacity: 0.7; }
+    }
+    
+    .pulse-dot {
+      animation: pulse-dot 1.5s ease-in-out infinite;
+    }
+    
+    @keyframes slide-down {
+      from { transform: translateY(-100%); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    
+    .banner-slide {
+      animation: slide-down 0.4s ease-out;
+    }
   </style>
   <script is:inline src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
 <body class="bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 min-h-screen p-4 sm:p-6 md:p-8 font-sans antialiased transition-colors duration-300">
   
-  <div class="max-w-3xl mx-auto space-y-6">
+  <!-- 🔔 REMINDER BANNER (sticky di atas) -->
+  <div id="reminderBanner" class="hidden fixed top-0 left-0 right-0 z-50 bg-gradient-to-r from-indigo-500 to-purple-500 text-white shadow-lg banner-slide">
+    <div class="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
+      <div class="flex items-center gap-3 flex-1 min-w-0">
+        <div class="text-2xl flex-shrink-0">🔔</div>
+        <div class="flex-1 min-w-0">
+          <div class="text-[10px] font-bold uppercase tracking-wider opacity-90">Pengingat Kegiatan</div>
+          <div id="reminderBannerText" class="text-sm font-bold truncate">Memuat...</div>
+          <div id="reminderBannerCountdown" class="text-xs opacity-90 mt-0.5"></div>
+        </div>
+      </div>
+      <button id="closeReminderBanner" class="p-2 hover:bg-white/20 rounded-lg transition-colors flex-shrink-0">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+        </svg>
+      </button>
+    </div>
+  </div>
+  
+  <div class="max-w-3xl mx-auto space-y-6" id="mainContent">
     
-    <!-- HEADER -->
+    <!-- HEADER dengan TOMBOL LONCENG -->
     <div class="flex justify-between items-center bg-white dark:bg-slate-800/40 backdrop-blur-xl border border-slate-200 dark:border-white/10 p-3 px-4 rounded-2xl shadow-sm">
       <a href="/" class="px-4 py-2 bg-rose-500/10 hover:bg-rose-600 border border-rose-500/20 text-rose-600 dark:text-rose-400 hover:text-white font-bold text-xs rounded-xl transition-all duration-200">
         Keluar
       </a>
       
-      <!-- THEME TOGGLE -->
-      <button id="theme-toggle" class="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-white/5 hover:scale-105 active:scale-95 transition-all text-xl cursor-pointer" title="Ganti Tema">
-        <span id="themeIcon" class="hidden dark:inline">🌙</span>
-        <span id="themeIconLight" class="inline dark:hidden">☀️</span>
-      </button>
+      <div class="flex items-center gap-2">
+        <!-- 🔔 TOMBOL LONCENG -->
+        <button id="btnReminder" class="relative p-2 rounded-xl bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/20 transition-all text-xl cursor-pointer" title="Pengingat Kegiatan">
+          <span id="bellIcon" class="inline-block">🔔</span>
+          <span id="badgeReminder" class="absolute -top-1 -right-1 w-5 h-5 bg-rose-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center hidden pulse-dot">0</span>
+        </button>
+        
+        <!-- THEME TOGGLE -->
+        <button id="theme-toggle" class="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-white/5 hover:scale-105 active:scale-95 transition-all text-xl cursor-pointer" title="Ganti Tema">
+          <span id="themeIcon" class="hidden dark:inline">🌙</span>
+          <span id="themeIconLight" class="inline dark:hidden">☀️</span>
+        </button>
+      </div>
     </div>
 
     <!-- PROFIL & STATUS -->
@@ -168,6 +224,29 @@ const pctHadir3Bln = Math.min(100, Math.round((userStats.Total_Hadir / (targets.
       
     </div>
 
+    <!-- 🔔 KEGIATAN MENDATANG (Card Baru) -->
+    <div id="upcomingEventsCard" class="bg-white dark:bg-slate-800/40 backdrop-blur-xl border border-slate-200 dark:border-white/10 rounded-2xl p-5 sm:p-6 shadow-sm">
+      <div class="flex items-center justify-between mb-4">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-xl">
+            📅
+          </div>
+          <div>
+            <h3 class="text-base font-bold text-slate-900 dark:text-white">Kegiatan Mendatang</h3>
+            <p class="text-[11px] text-slate-500 dark:text-slate-400">Jadwal pengajian & kegiatan lainnya</p>
+          </div>
+        </div>
+        <button id="btnRefreshKegiatan" class="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500 transition-colors" title="Refresh">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+          </svg>
+        </button>
+      </div>
+      <div id="upcomingEventsList" class="space-y-2">
+        <div class="text-center py-6 text-slate-400 text-sm">⏳ Memuat data kegiatan...</div>
+      </div>
+    </div>
+
     <!-- QR CODE -->
     <div class="text-center p-6 sm:p-10 bg-white dark:bg-slate-800/10 border border-dashed border-slate-300 dark:border-white/10 rounded-2xl shadow-sm">
       <h3 class="text-base sm:text-lg font-bold text-slate-900 dark:text-white mb-1">Kartu Digital QR Presensi</h3>
@@ -179,7 +258,7 @@ const pctHadir3Bln = Math.min(100, Math.round((userStats.Total_Hadir / (targets.
       </div>
     </div>
 
-    <!-- FORM UBAH PASSWORD - FIXED: DEFAULT CHEVRON UP, DEFAULT EYE-SLASH -->
+    <!-- FORM UBAH PASSWORD -->
     <div class="bg-white dark:bg-slate-800/40 backdrop-blur-xl border border-slate-200 dark:border-white/10 rounded-2xl shadow-sm overflow-hidden">
       <button id="togglePasswordForm" class="w-full p-5 flex justify-between items-center hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors">
         <div class="flex items-center gap-3 text-left">
@@ -191,7 +270,6 @@ const pctHadir3Bln = Math.min(100, Math.round((userStats.Total_Hadir / (targets.
             <p class="text-[11px] text-slate-500 dark:text-slate-400">Ganti password default dengan password pribadi</p>
           </div>
         </div>
-        <!-- CHEVRON: Default UP (rotate-180), saat dibuka = DOWN (remove rotate) -->
         <svg id="chevronIcon" class="w-5 h-5 text-slate-400 transition-transform duration-300 rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
         </svg>
@@ -206,7 +284,6 @@ const pctHadir3Bln = Math.min(100, Math.round((userStats.Total_Hadir / (targets.
               <input type="password" id="inputPassLama" required placeholder="Masukkan password saat ini..." 
                 class="w-full p-3 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-white/10 rounded-xl text-sm outline-none text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 transition-all pr-10"/>
               <button type="button" class="toggle-password absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors" data-target="inputPassLama">
-                <!-- DEFAULT: Eye-Slash Icon (Password Hidden) -->
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"></path>
                 </svg>
@@ -220,7 +297,6 @@ const pctHadir3Bln = Math.min(100, Math.round((userStats.Total_Hadir / (targets.
               <input type="password" id="inputPassBaru" required minlength="4" placeholder="Minimal 4 karakter (bebas)" 
                 class="w-full p-3 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-white/10 rounded-xl text-sm outline-none text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 transition-all pr-10"/>
               <button type="button" class="toggle-password absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors" data-target="inputPassBaru">
-                <!-- DEFAULT: Eye-Slash Icon (Password Hidden) -->
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"></path>
                 </svg>
@@ -234,7 +310,6 @@ const pctHadir3Bln = Math.min(100, Math.round((userStats.Total_Hadir / (targets.
               <input type="password" id="inputPassKonfirmasi" required minlength="4" placeholder="Ketik ulang password baru..." 
                 class="w-full p-3 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-white/10 rounded-xl text-sm outline-none text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 transition-all pr-10"/>
               <button type="button" class="toggle-password absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors" data-target="inputPassKonfirmasi">
-                <!-- DEFAULT: Eye-Slash Icon (Password Hidden) -->
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"></path>
                 </svg>
@@ -254,12 +329,89 @@ const pctHadir3Bln = Math.min(100, Math.round((userStats.Total_Hadir / (targets.
 
   </div>
 
+  <!-- 🔔 REMINDER MODAL -->
+  <div id="reminderModal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-md shadow-2xl border border-slate-200 dark:border-slate-700 max-h-[85vh] overflow-y-auto">
+      <div class="sticky top-0 bg-white dark:bg-slate-900 p-4 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center">
+        <div class="flex items-center gap-2">
+          <span class="text-2xl">🔔</span>
+          <h2 class="text-base font-bold text-slate-900 dark:text-white">Pengingat Kegiatan</h2>
+        </div>
+        <button id="closeReminderModal" class="w-7 h-7 flex items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 text-xs font-bold">✕</button>
+      </div>
+      
+      <div class="p-4">
+        <div id="reminderModalContent" class="space-y-3"></div>
+        
+        <button id="btnTutupReminder" class="w-full mt-4 py-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-900 dark:text-white font-bold rounded-xl text-sm transition-colors">
+          Tutup
+        </button>
+      </div>
+    </div>
+  </div>
+
   <script>
     const GOOGLE_API_URL = import.meta.env.PUBLIC_SECRET_SHEETS_API_URL;
 
+    interface KegiatanItem {
+      Tanggal: string;
+      Judul_Besar?: string;
+      Jam_Mulai?: unknown;
+      Jam_Selesai?: unknown;
+      Tempat?: string;
+      MC?: string;
+    }
+
+    let allKegiatan: KegiatanItem[] = [];
+    let countdownInterval: number | null = null;
+    let hasPlayedSound = false;
+
+    // 🔥 FIX BUG WAKTU (1899-12-30...) dari Google Sheets
+    function formatTime(timeVal: unknown): string {
+      if (!timeVal && timeVal !== 0) return '';
+      if (typeof timeVal === 'number') {
+        const totalMinutes = Math.round(timeVal * 24 * 60);
+        const hours = Math.floor(totalMinutes / 60) % 24;
+        const minutes = totalMinutes % 60;
+        return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+      }
+      if (typeof timeVal === 'string') {
+        if (timeVal.includes('1899') || timeVal.includes('1900')) {
+          const d = new Date(timeVal);
+          if (!isNaN(d.getTime())) return d.toTimeString().substring(0, 5);
+        }
+        if (timeVal.length === 5 && timeVal.includes(':')) return timeVal;
+        if (timeVal.length === 8 && timeVal.includes(':')) return timeVal.substring(0, 5);
+      }
+      if (timeVal instanceof Date && !isNaN(timeVal.getTime())) {
+        return timeVal.toTimeString().substring(0, 5);
+      }
+      return timeVal ? String(timeVal) : '';
+    }
+
+    // 🔔 Sound Notification
+    function playNotificationSound() {
+      try {
+        const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+        const audioContext = new AudioCtx();
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        
+        oscillator.frequency.value = 800;
+        oscillator.type = 'sine';
+        gainNode.gain.setValueAtTime(0.2, audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+        
+        oscillator.start(audioContext.currentTime);
+        oscillator.stop(audioContext.currentTime + 0.3);
+      } catch (e) {}
+    }
+
     // ====== TOGGLE TEMA ======
     const toggleBtn = document.getElementById('theme-toggle');
-    
     toggleBtn?.addEventListener('click', () => {
       const isDark = document.documentElement.classList.contains('dark');
       if (isDark) {
@@ -271,47 +423,29 @@ const pctHadir3Bln = Math.min(100, Math.round((userStats.Total_Hadir / (targets.
       }
     });
 
-    // ====== TOGGLE FORM PASSWORD - FIXED: DEFAULT UP, OPEN = DOWN ======
+    // ====== TOGGLE FORM PASSWORD ======
     const togglePasswordBtn = document.getElementById('togglePasswordForm');
     const passwordFormContainer = document.getElementById('passwordFormContainer');
     const chevronIcon = document.getElementById('chevronIcon');
     
     togglePasswordBtn?.addEventListener('click', () => {
       const isHidden = passwordFormContainer?.classList.toggle('hidden');
-      // Default: rotate-180 (UP), saat dibuka: remove rotate-180 (DOWN)
-      if (!isHidden) {
-        chevronIcon?.classList.remove('rotate-180');
-      } else {
-        chevronIcon?.classList.add('rotate-180');
-      }
+      if (!isHidden) chevronIcon?.classList.remove('rotate-180');
+      else chevronIcon?.classList.add('rotate-180');
     });
 
-    // ====== PASSWORD VISIBILITY TOGGLE - FIXED: DEFAULT EYE-SLASH, CLICK = EYE ======
-    const eyeIconSVG = `
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
-    `;
-    
-    const eyeSlashIconSVG = `
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"></path>
-    `;
+    // ====== PASSWORD VISIBILITY ======
+    const eyeIconSVG = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>`;
+    const eyeSlashIconSVG = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"></path>`;
 
     document.querySelectorAll('.toggle-password').forEach(btn => {
       btn.addEventListener('click', function(this: HTMLElement) {
         const targetId = this.getAttribute('data-target');
         const input = targetId ? document.getElementById(targetId) as HTMLInputElement | null : null;
         const iconSvg = this.querySelector('svg');
-        
         if (input && iconSvg) {
-          if (input.type === 'password') {
-            // Show password - change to EYE icon (visible)
-            input.type = 'text';
-            iconSvg.innerHTML = eyeIconSVG;
-          } else {
-            // Hide password - change back to EYE-SLASH icon (hidden)
-            input.type = 'password';
-            iconSvg.innerHTML = eyeSlashIconSVG;
-          }
+          if (input.type === 'password') { input.type = 'text'; iconSvg.innerHTML = eyeIconSVG; }
+          else { input.type = 'password'; iconSvg.innerHTML = eyeSlashIconSVG; }
         }
       });
     });
@@ -326,23 +460,21 @@ const pctHadir3Bln = Math.min(100, Math.round((userStats.Total_Hadir / (targets.
       if (!passwordMsg) return;
       passwordMsg.classList.remove('hidden');
       passwordMsg.className = `text-xs font-semibold p-3 rounded-xl ${
-        isSuccess 
-          ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30' 
-          : 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/30'
+        isSuccess ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30' 
+                  : 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/30'
       }`;
       passwordMsg.innerText = text;
     }
 
     formPassword?.addEventListener('submit', async (e) => {
       e.preventDefault();
-      
       const passLama = (document.getElementById('inputPassLama') as HTMLInputElement).value.trim();
       const passBaru = (document.getElementById('inputPassBaru') as HTMLInputElement).value.trim();
       const passKonfirmasi = (document.getElementById('inputPassKonfirmasi') as HTMLInputElement).value.trim();
 
       if (passBaru.length < 4) return showPasswordMsg("❌ Password baru minimal 4 karakter!", false);
       if (passBaru !== passKonfirmasi) return showPasswordMsg("❌ Konfirmasi password tidak cocok!", false);
-      if (passLama === passBaru) return showPasswordMsg("❌ Password baru harus berbeda dari password lama!", false);
+      if (passLama === passBaru) return showPasswordMsg("❌ Password baru harus berbeda!", false);
 
       if (btnSubmit) btnSubmit.disabled = true;
       if (btnSubmitText) btnSubmitText.innerText = "Menyimpan...";
@@ -374,19 +506,19 @@ const pctHadir3Bln = Math.min(100, Math.round((userStats.Total_Hadir / (targets.
           showPasswordMsg("❌ " + result.replace('KATA_KUNCI_GAGAL: ', ''), false);
         }
       } catch (err) {
-        showPasswordMsg("❌ Terjadi kesalahan jaringan. Coba lagi.", false);
+        showPasswordMsg("❌ Terjadi kesalahan jaringan.", false);
       } finally {
         if (btnSubmit) btnSubmit.disabled = false;
         if (btnSubmitText) btnSubmitText.innerText = "Simpan Password Baru";
       }
     });
 
-    // ====== QR CODE GENERATOR ======
+    // ====== QR CODE ======
     window.addEventListener('DOMContentLoaded', () => {
       const qrContainer = document.getElementById('qrcode');
       if (!qrContainer) return;
       const userIdStr = qrContainer.getAttribute('data-uid');
-      // @ts-ignore - QRCode is loaded via CDN script tag
+      // @ts-ignore - QRCode loaded via CDN
       if (userIdStr && typeof QRCode !== 'undefined') {
         const qrSize = window.innerWidth < 640 ? 160 : 180;
         // @ts-ignore
@@ -394,13 +526,289 @@ const pctHadir3Bln = Math.min(100, Math.round((userStats.Total_Hadir / (targets.
           text: userIdStr,
           width: qrSize,
           height: qrSize,
-          colorDark : "#0f172a",
-          colorLight : "#ffffff",
+          colorDark: "#0f172a",
+          colorLight: "#ffffff",
           // @ts-ignore
-          correctLevel : QRCode.CorrectLevel.H
+          correctLevel: QRCode.CorrectLevel.H
         });
       }
+      
+      // Load kegiatan
+      fetchKegiatan();
     });
+
+    // ==========================================
+    // 🔔 SISTEM PENGINGAT KEGIATAN
+    // ==========================================
+    
+    async function fetchKegiatan() {
+      const list = document.getElementById('upcomingEventsList');
+      if (!list) return;
+      
+      try {
+        const res = await fetch(GOOGLE_API_URL);
+        if (!res.ok) throw new Error('Network error');
+        
+        const data = await res.json();
+        console.log('📦 Data dari API:', data);
+        
+        // FIX: Ambil data kegiatan dengan benar
+        allKegiatan = [];
+        if (data.jadwalKegiatan?.data && Array.isArray(data.jadwalKegiatan.data)) {
+          allKegiatan = data.jadwalKegiatan.data as KegiatanItem[];
+        }
+        
+        console.log(`📅 Total kegiatan: ${allKegiatan.length}`);
+        
+        const now = new Date();
+        const sevenDaysLater = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+        
+        // Filter kegiatan dalam 7 hari ke depan
+        const upcomingEvents = allKegiatan.filter((k: KegiatanItem) => {
+          const tgl = new Date(k.Tanggal);
+          return !isNaN(tgl.getTime()) && tgl >= now && tgl <= sevenDaysLater;
+        }).sort((a: KegiatanItem, b: KegiatanItem) => new Date(a.Tanggal).getTime() - new Date(b.Tanggal).getTime());
+        
+        console.log(`🔔 Kegiatan mendatang: ${upcomingEvents.length}`);
+        
+        if (upcomingEvents.length > 0) {
+          renderUpcomingEvents(upcomingEvents);
+          showReminderBanner(upcomingEvents[0]);
+          updateReminderBadge(upcomingEvents.length);
+          startCountdown(upcomingEvents[0]);
+          
+          // Putar suara untuk kegiatan hari ini
+          const todayEvent = upcomingEvents.find((k: KegiatanItem) => {
+            const tgl = new Date(k.Tanggal);
+            return tgl.toDateString() === now.toDateString();
+          });
+          
+          if (todayEvent && !hasPlayedSound) {
+            setTimeout(() => {
+              playNotificationSound();
+              const bellIcon = document.getElementById('bellIcon');
+              if (bellIcon) {
+                bellIcon.classList.add('bell-animate');
+                setTimeout(() => bellIcon.classList.remove('bell-animate'), 800);
+              }
+            }, 1000);
+            hasPlayedSound = true;
+          }
+        } else {
+          list.innerHTML = `
+            <div class="text-center py-6 text-slate-400 text-sm">
+              <div class="text-3xl mb-2">✨</div>
+              <p>Tidak ada kegiatan dalam 7 hari ke depan</p>
+            </div>
+          `;
+          document.getElementById('reminderBanner')?.classList.add('hidden');
+          document.getElementById('badgeReminder')?.classList.add('hidden');
+        }
+      } catch (err) {
+        console.error('❌ Error fetch:', err);
+        list.innerHTML = `
+          <div class="text-center py-6 text-rose-500 text-sm">
+            <p>⚠️ Gagal memuat data kegiatan</p>
+            <button onclick="fetchKegiatan()" class="mt-2 px-3 py-1 bg-indigo-500 text-white rounded-lg text-xs">Coba Lagi</button>
+          </div>
+        `;
+      }
+    }
+
+    function renderUpcomingEvents(events: KegiatanItem[]) {
+      const list = document.getElementById('upcomingEventsList');
+      if (!list) return;
+      
+      list.innerHTML = events.slice(0, 3).map((k: KegiatanItem) => {
+        const tgl = new Date(k.Tanggal);
+        const now = new Date();
+        const diffTime = tgl.getTime() - now.getTime();
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        const diffHours = Math.floor(diffTime / (1000 * 60 * 60));
+        
+        let timeBadge = '';
+        let badgeClass = '';
+        
+        if (diffDays === 0) {
+          timeBadge = `⚡ HARI INI (${diffHours}j)`;
+          badgeClass = 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/30';
+        } else if (diffDays === 1) {
+          timeBadge = '🔥 BESOK';
+          badgeClass = 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30';
+        } else {
+          timeBadge = `📅 H-${diffDays}`;
+          badgeClass = 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/30';
+        }
+        
+        const tanggalStr = tgl.toLocaleDateString('id-ID', { 
+          weekday: 'long', day: 'numeric', month: 'long' 
+        });
+        
+        const jamMulai = formatTime(k.Jam_Mulai);
+        const jamSelesai = formatTime(k.Jam_Selesai);
+        const jamStr = jamMulai ? (jamSelesai ? `${jamMulai} - ${jamSelesai}` : jamMulai) : '-';
+        
+        return `
+          <div class="bg-slate-50 dark:bg-slate-900/40 rounded-xl p-3 border border-slate-200 dark:border-white/5">
+            <div class="flex items-start justify-between gap-2 mb-2">
+              <h4 class="font-bold text-sm text-slate-900 dark:text-white flex-1">${k.Judul_Besar || '-'}</h4>
+              <span class="${badgeClass} px-2 py-0.5 border rounded-full text-[10px] font-bold whitespace-nowrap">${timeBadge}</span>
+            </div>
+            <div class="text-xs text-slate-500 dark:text-slate-400 space-y-0.5">
+              <div>🗓️ ${tanggalStr}</div>
+              <div>🕐 ${jamStr} WIB</div>
+              ${k.Tempat ? `<div>📍 ${k.Tempat}</div>` : ''}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function showReminderBanner(event: KegiatanItem) {
+      const banner = document.getElementById('reminderBanner');
+      const text = document.getElementById('reminderBannerText');
+      const countdown = document.getElementById('reminderBannerCountdown');
+      const closeBtn = document.getElementById('closeReminderBanner');
+      const mainContent = document.getElementById('mainContent') as HTMLElement | null;
+      
+      if (!banner || !text || !countdown) return;
+      
+      const lastClosed = localStorage.getItem('reminderBannerClosed');
+      const today = new Date().toDateString();
+      
+      if (lastClosed === today) return;
+      
+      banner.classList.remove('hidden');
+      if (mainContent) mainContent.style.marginTop = '80px';
+      
+      text.textContent = event.Judul_Besar || 'Kegiatan';
+      
+      closeBtn?.addEventListener('click', () => {
+        banner.classList.add('hidden');
+        if (mainContent) mainContent.style.marginTop = '0';
+        localStorage.setItem('reminderBannerClosed', today);
+      });
+    }
+
+    function updateReminderBadge(count: number) {
+      const badge = document.getElementById('badgeReminder');
+      if (!badge) return;
+      
+      if (count > 0) {
+        badge.textContent = count > 9 ? '9+' : String(count);
+        badge.classList.remove('hidden');
+      } else {
+        badge.classList.add('hidden');
+      }
+    }
+
+    function startCountdown(event: KegiatanItem) {
+      const countdownEl = document.getElementById('reminderBannerCountdown');
+      if (!countdownEl) return;
+      
+      function updateCountdown() {
+        if (!countdownEl) return;
+        const tgl = new Date(event.Tanggal);
+        const now = new Date();
+        const diff = tgl.getTime() - now.getTime();
+        
+        if (diff <= 0) {
+          countdownEl.textContent = '⚡ Sedang berlangsung!';
+          if (countdownInterval) clearInterval(countdownInterval);
+          return;
+        }
+        
+        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+        
+        let text = '⏰ ';
+        if (days > 0) text += `${days}h `;
+        if (hours > 0) text += `${hours}j `;
+        text += `${minutes}m lagi`;
+        
+        countdownEl.textContent = text;
+      }
+      
+      updateCountdown();
+      countdownInterval = window.setInterval(updateCountdown, 60000);
+    }
+
+    // ====== MODAL PENGINGAT ======
+    document.getElementById('btnReminder')?.addEventListener('click', () => showReminderModal());
+    document.getElementById('closeReminderModal')?.addEventListener('click', () => {
+      document.getElementById('reminderModal')?.classList.add('hidden');
+    });
+    document.getElementById('btnTutupReminder')?.addEventListener('click', () => {
+      document.getElementById('reminderModal')?.classList.add('hidden');
+    });
+    document.getElementById('btnRefreshKegiatan')?.addEventListener('click', () => {
+      hasPlayedSound = false;
+      fetchKegiatan();
+    });
+
+    function showReminderModal() {
+      const modal = document.getElementById('reminderModal');
+      const content = document.getElementById('reminderModalContent');
+      if (!modal || !content) return;
+      
+      const now = new Date();
+      const upcomingEvents = allKegiatan.filter((k: KegiatanItem) => {
+        const tgl = new Date(k.Tanggal);
+        return !isNaN(tgl.getTime()) && tgl >= now;
+      }).sort((a: KegiatanItem, b: KegiatanItem) => new Date(a.Tanggal).getTime() - new Date(b.Tanggal).getTime()).slice(0, 5);
+      
+      if (upcomingEvents.length === 0) {
+        content.innerHTML = `<div class="text-center py-8 text-slate-400 text-sm">✨ Tidak ada kegiatan mendatang</div>`;
+      } else {
+        content.innerHTML = upcomingEvents.map((k: KegiatanItem) => {
+          const tgl = new Date(k.Tanggal);
+          const diffDays = Math.ceil((tgl.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+          
+          let badge = '';
+          let badgeClass = '';
+          
+          if (diffDays === 0) {
+            badge = '⚡ HARI INI';
+            badgeClass = 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/30';
+          } else if (diffDays === 1) {
+            badge = '🔥 BESOK';
+            badgeClass = 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30';
+          } else {
+            badge = `📅 H-${diffDays}`;
+            badgeClass = 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/30';
+          }
+          
+          const tanggalStr = tgl.toLocaleDateString('id-ID', { 
+            weekday: 'long', day: 'numeric', month: 'long' 
+          });
+          
+          const jamMulai = formatTime(k.Jam_Mulai);
+          const jamSelesai = formatTime(k.Jam_Selesai);
+          const jamStr = jamMulai ? (jamSelesai ? `${jamMulai} - ${jamSelesai}` : jamMulai) : '-';
+          
+          return `
+            <div class="bg-slate-50 dark:bg-slate-800/60 rounded-xl p-3 border border-slate-200 dark:border-slate-700">
+              <div class="flex items-start justify-between gap-2 mb-2">
+                <h4 class="font-bold text-sm text-slate-900 dark:text-white flex-1">${k.Judul_Besar || '-'}</h4>
+                <span class="${badgeClass} px-2 py-0.5 border rounded-full text-[10px] font-bold whitespace-nowrap">${badge}</span>
+              </div>
+              <div class="text-xs text-slate-600 dark:text-slate-400 space-y-0.5">
+                <div>🗓️ ${tanggalStr}</div>
+                <div>🕐 ${jamStr} WIB</div>
+                ${k.Tempat ? `<div>📍 ${k.Tempat}</div>` : ''}
+                ${k.MC ? `<div>🎤 MC: ${k.MC}</div>` : ''}
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+      
+      modal.classList.remove('hidden');
+    }
+
+    // Auto refresh setiap 2 menit
+    setInterval(() => fetchKegiatan(), 2 * 60 * 1000);
   </script>
 </body>
 </html>
