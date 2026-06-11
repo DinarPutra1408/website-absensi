@@ -30,7 +30,7 @@ const sekretarisNama = Astro.url.searchParams.get('nama') || 'Sekretaris';
     <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 pb-5 mb-6 border-b border-slate-200 dark:border-slate-800">
       <div>
         <h1 class="text-xl md:text-2xl font-bold">Dashboard <span class="text-purple-600 dark:text-purple-400">Sekretaris</span></h1>
-        <p class="text-xs text-slate-500 mt-1">Halo, <b>{sekretarisNama}</b> — Kelola jadwal kegiatan</p>
+        <p class="text-xs text-slate-500 mt-1">Halo, <b>{sekretarisNama}</b> — Kelola jadwal & pengumuman</p>
       </div>
       <div class="flex items-center gap-2">
         <button id="themeToggleBtn" class="w-10 h-10 flex items-center justify-center rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-lg hover:bg-slate-100 dark:hover:bg-slate-800 shadow-sm">🌙</button>
@@ -39,9 +39,10 @@ const sekretarisNama = Astro.url.searchParams.get('nama') || 'Sekretaris';
     </header>
 
     <!-- View Toggle -->
-    <div class="flex gap-2 mb-4">
-      <button id="btnViewCalendar" class="flex-1 py-2.5 bg-purple-500 text-white text-sm font-bold rounded-xl shadow-md">📅 Calendar View</button>
-      <button id="btnViewList" class="flex-1 py-2.5 bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-sm font-bold rounded-xl">📋 List View</button>
+    <div class="flex gap-2 mb-4 flex-wrap">
+      <button id="btnViewCalendar" class="flex-1 min-w-[100px] py-2.5 bg-purple-500 text-white text-sm font-bold rounded-xl shadow-md">📅 Calendar</button>
+      <button id="btnViewList" class="flex-1 min-w-[100px] py-2.5 bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-sm font-bold rounded-xl">📋 Jadwal</button>
+      <button id="btnViewLaporan" class="flex-1 min-w-[100px] py-2.5 bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-sm font-bold rounded-xl">📝 Laporan</button>
       <button id="btnTambah" class="px-4 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-bold rounded-xl shadow-md">+ Tambah</button>
     </div>
 
@@ -75,6 +76,49 @@ const sekretarisNama = Astro.url.searchParams.get('nama') || 'Sekretaris';
 
     <!-- LIST VIEW -->
     <div id="listView" class="hidden space-y-3 mb-6"></div>
+
+    <!-- LAPORAN VIEW -->
+    <div id="laporanView" class="hidden space-y-4 mb-6">
+      <div class="bg-white dark:bg-slate-800 rounded-2xl p-4 shadow-sm border border-slate-200 dark:border-slate-700">
+        <div class="flex items-center justify-between mb-3">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center text-xl">📝</div>
+            <div>
+              <h3 class="text-base font-bold text-slate-900 dark:text-white">Laporan Pelaksanaan Kegiatan</h3>
+              <p class="text-[11px] text-slate-500 dark:text-slate-400">Validasi & perkembangan materi setelah acara</p>
+            </div>
+          </div>
+        </div>
+        
+        <div class="flex gap-2 flex-wrap">
+          <button onclick="filterLaporan('semua')" class="filter-btn px-3 py-1.5 bg-purple-500 text-white text-xs font-bold rounded-lg" data-filter="semua">Semua</button>
+          <button onclick="filterLaporan('terlaksana')" class="filter-btn px-3 py-1.5 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold rounded-lg" data-filter="terlaksana">✅ Terlaksana</button>
+          <button onclick="filterLaporan('belum')" class="filter-btn px-3 py-1.5 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold rounded-lg" data-filter="belum">⏳ Belum</button>
+          <button onclick="filterLaporan('batal')" class="filter-btn px-3 py-1.5 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold rounded-lg" data-filter="batal">❌ Dibatalkan</button>
+        </div>
+      </div>
+      
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div class="bg-white dark:bg-slate-800 rounded-xl p-3 border border-slate-200 dark:border-slate-700">
+          <div class="text-[10px] font-bold text-slate-500 uppercase">Total Kegiatan</div>
+          <div id="statTotal" class="text-2xl font-black text-slate-900 dark:text-white mt-1">0</div>
+        </div>
+        <div class="bg-emerald-50 dark:bg-emerald-900/20 rounded-xl p-3 border border-emerald-200 dark:border-emerald-800">
+          <div class="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase">Terlaksana</div>
+          <div id="statTerlaksana" class="text-2xl font-black text-emerald-600 dark:text-emerald-400 mt-1">0</div>
+        </div>
+        <div class="bg-amber-50 dark:bg-amber-900/20 rounded-xl p-3 border border-amber-200 dark:border-amber-800">
+          <div class="text-[10px] font-bold text-amber-600 dark:text-amber-400 uppercase">Belum</div>
+          <div id="statBelum" class="text-2xl font-black text-amber-600 dark:text-amber-400 mt-1">0</div>
+        </div>
+        <div class="bg-rose-50 dark:bg-rose-900/20 rounded-xl p-3 border border-rose-200 dark:border-rose-800">
+          <div class="text-[10px] font-bold text-rose-600 dark:text-rose-400 uppercase">Dibatalkan</div>
+          <div id="statBatal" class="text-2xl font-black text-rose-600 dark:text-rose-400 mt-1">0</div>
+        </div>
+      </div>
+      
+      <div id="laporanList" class="space-y-3"></div>
+    </div>
 
     <!-- FORM MODAL -->
     <div id="formModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
@@ -116,8 +160,8 @@ const sekretarisNama = Astro.url.searchParams.get('nama') || 'Sekretaris';
           </div>
           
           <div>
-            <label class="block text-xs font-bold mb-1">MC / Tuan Rumah</label>
-            <input type="text" id="inpMC" placeholder="Contoh: Kelompok Wonorejo" class="w-full p-3 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-sm"/>
+            <label class="block text-xs font-bold mb-1">MC / Moderator</label>
+            <input type="text" id="inpMC/Moderator" placeholder="Contoh: Kelompok Wonorejo" class="w-full p-3 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-sm"/>
           </div>
           
           <div>
@@ -128,6 +172,73 @@ const sekretarisNama = Astro.url.searchParams.get('nama') || 'Sekretaris';
           <div>
             <label class="block text-xs font-bold mb-1">Peserta</label>
             <input type="text" id="inpPeserta" placeholder="Contoh: SELURUH MUDA MUDI (Usia SMA Keatas)" class="w-full p-3 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-sm"/>
+          </div>
+          
+          <!-- 🔥 ASSIGNED USERS & PRIORITAS -->
+          <div class="border-t border-slate-200 dark:border-slate-700 pt-3 space-y-3">
+            <!-- Prioritas -->
+            <div>
+              <label class="block text-xs font-bold mb-2">🎯 Prioritas Pengumuman</label>
+              <div class="grid grid-cols-3 gap-2">
+                <label class="cursor-pointer">
+                  <input type="radio" name="prioritas" value="Normal" class="hidden peer" checked>
+                  <div class="p-2 border-2 border-slate-200 dark:border-slate-700 rounded-lg text-center peer-checked:border-blue-500 peer-checked:bg-blue-50 dark:peer-checked:bg-blue-900/20 transition-all">
+                    <div class="text-lg">📌</div>
+                    <div class="text-[10px] font-bold text-slate-700 dark:text-slate-300">Normal</div>
+                  </div>
+                </label>
+                <label class="cursor-pointer">
+                  <input type="radio" name="prioritas" value="Penting" class="hidden peer">
+                  <div class="p-2 border-2 border-slate-200 dark:border-slate-700 rounded-lg text-center peer-checked:border-amber-500 peer-checked:bg-amber-50 dark:peer-checked:bg-amber-900/20 transition-all">
+                    <div class="text-lg">⚠️</div>
+                    <div class="text-[10px] font-bold text-slate-700 dark:text-slate-300">Penting</div>
+                  </div>
+                </label>
+                <label class="cursor-pointer">
+                  <input type="radio" name="prioritas" value="Urgent" class="hidden peer">
+                  <div class="p-2 border-2 border-slate-200 dark:border-slate-700 rounded-lg text-center peer-checked:border-rose-500 peer-checked:bg-rose-50 dark:peer-checked:bg-rose-900/20 transition-all">
+                    <div class="text-lg">🚨</div>
+                    <div class="text-[10px] font-bold text-slate-700 dark:text-slate-300">Urgent</div>
+                  </div>
+                </label>
+              </div>
+            </div>
+            
+            <!-- Assign ke User -->
+            <div>
+              <label class="block text-xs font-bold mb-2">👥 Assign ke User</label>
+              <div class="grid grid-cols-2 gap-2 mb-3">
+                <label class="cursor-pointer">
+                  <input type="radio" name="assignType" value="general" class="hidden peer" checked>
+                  <div class="p-3 border-2 border-slate-200 dark:border-slate-700 rounded-xl text-center peer-checked:border-blue-500 peer-checked:bg-blue-50 dark:peer-checked:bg-blue-900/20 transition-all">
+                    <div class="text-xl mb-1">🌐</div>
+                    <div class="text-xs font-bold text-slate-700 dark:text-slate-300">Semua User</div>
+                  </div>
+                </label>
+                <label class="cursor-pointer">
+                  <input type="radio" name="assignType" value="specific" class="hidden peer">
+                  <div class="p-3 border-2 border-slate-200 dark:border-slate-700 rounded-xl text-center peer-checked:border-purple-500 peer-checked:bg-purple-50 dark:peer-checked:bg-purple-900/20 transition-all">
+                    <div class="text-xl mb-1">👥</div>
+                    <div class="text-xs font-bold text-slate-700 dark:text-slate-300">Pilih User</div>
+                  </div>
+                </label>
+              </div>
+              
+              <!-- Search User Section -->
+              <div id="searchUserSection" class="hidden">
+                <div class="relative mb-2">
+                  <input type="text" id="searchUserInput" placeholder="Cari nama atau ID user..." 
+                    class="w-full p-3 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-sm pl-10"
+                    oninput="searchUsers(this.value)">
+                  <svg class="w-5 h-5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                  </svg>
+                </div>
+                
+                <div id="selectedUsersList" class="flex flex-wrap gap-2 mb-2"></div>
+                <div id="searchResults" class="max-h-48 overflow-y-auto space-y-1 border border-slate-200 dark:border-slate-700 rounded-xl p-2"></div>
+              </div>
+            </div>
           </div>
           
           <div class="border-t border-slate-200 dark:border-slate-700 pt-3">
@@ -155,27 +266,88 @@ const sekretarisNama = Astro.url.searchParams.get('nama') || 'Sekretaris';
     <!-- LAPORAN MODAL -->
     <div id="laporanModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
       <div class="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-2xl shadow-2xl border border-slate-200 dark:border-slate-700 max-h-[90vh] overflow-y-auto">
-        <div class="sticky top-0 bg-white dark:bg-slate-900 p-4 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center z-10">
-          <h2 class="text-base font-bold">📝 Laporan Pelaksanaan Kegiatan</h2>
-          <button onclick="document.getElementById('laporanModal').classList.add('hidden'); document.getElementById('laporanModal').classList.remove('flex');" class="w-7 h-7 flex items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 text-xs font-bold">✕</button>
+        <div class="sticky top-0 bg-gradient-to-r from-amber-500 to-orange-500 p-4 rounded-t-2xl flex justify-between items-center z-10">
+          <div class="flex items-center gap-2">
+            <span class="text-2xl">📝</span>
+            <h2 class="text-base font-bold text-white">Laporan Pelaksanaan Kegiatan</h2>
+          </div>
+          <button onclick="document.getElementById('laporanModal').classList.add('hidden'); document.getElementById('laporanModal').classList.remove('flex');" class="w-7 h-7 flex items-center justify-center rounded-full bg-white/20 hover:bg-white/30 text-white font-bold">✕</button>
         </div>
         
-        <div class="p-4 space-y-3">
+        <div class="p-4 space-y-4">
           <input type="hidden" id="laporanRowNumber" value="">
-          <div>
-            <label class="block text-xs font-bold mb-1">Judul Kegiatan</label>
-            <div id="laporanJudul" class="p-3 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-sm font-bold text-purple-600 dark:text-purple-400"></div>
+          
+          <div class="bg-slate-50 dark:bg-slate-800 rounded-xl p-3 border border-slate-200 dark:border-slate-700">
+            <div class="text-[10px] font-bold text-slate-500 uppercase mb-1">Kegiatan</div>
+            <div id="laporanJudul" class="text-sm font-bold text-purple-600 dark:text-purple-400"></div>
+            <div id="laporanTanggal" class="text-xs text-slate-500 mt-1"></div>
           </div>
           
           <div>
-            <label class="block text-xs font-bold mb-1">📝 Laporan Perkembangan Materi / Pelaksanaan <span class="text-rose-500">*</span></label>
-            <textarea id="inpLaporan" rows="8" placeholder="Tuliskan laporan pelaksanaan kegiatan, perkembangan materi yang dibahas, kendala, jumlah hadir, dan saran..." class="w-full p-3 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-sm"></textarea>
+            <label class="block text-xs font-bold mb-2">✅ Status Pelaksanaan <span class="text-rose-500">*</span></label>
+            <div class="grid grid-cols-3 gap-2">
+              <label class="cursor-pointer">
+                <input type="radio" name="statusPelaksanaan" value="Terlaksana" class="hidden peer" checked>
+                <div class="p-3 border-2 border-slate-200 dark:border-slate-700 rounded-xl text-center peer-checked:border-emerald-500 peer-checked:bg-emerald-50 dark:peer-checked:bg-emerald-900/20 transition-all">
+                  <div class="text-2xl mb-1">✅</div>
+                  <div class="text-xs font-bold text-slate-700 dark:text-slate-300">Terlaksana</div>
+                </div>
+              </label>
+              <label class="cursor-pointer">
+                <input type="radio" name="statusPelaksanaan" value="Ditunda" class="hidden peer">
+                <div class="p-3 border-2 border-slate-200 dark:border-slate-700 rounded-xl text-center peer-checked:border-amber-500 peer-checked:bg-amber-50 dark:peer-checked:bg-amber-900/20 transition-all">
+                  <div class="text-2xl mb-1">⏸️</div>
+                  <div class="text-xs font-bold text-slate-700 dark:text-slate-300">Ditunda</div>
+                </div>
+              </label>
+              <label class="cursor-pointer">
+                <input type="radio" name="statusPelaksanaan" value="Dibatalkan" class="hidden peer">
+                <div class="p-3 border-2 border-slate-200 dark:border-slate-700 rounded-xl text-center peer-checked:border-rose-500 peer-checked:bg-rose-50 dark:peer-checked:bg-rose-900/20 transition-all">
+                  <div class="text-2xl mb-1">❌</div>
+                  <div class="text-xs font-bold text-slate-700 dark:text-slate-300">Dibatalkan</div>
+                </div>
+              </label>
+            </div>
+          </div>
+          
+          <div>
+            <label class="block text-xs font-bold mb-1">👥 Jumlah Hadir (orang)</label>
+            <input type="number" id="inpJumlahHadir" min="0" placeholder="Contoh: 45" class="w-full p-3 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-sm"/>
+          </div>
+          
+          <div>
+            <label class="block text-xs font-bold mb-1">📖 Perkembangan Materi <span class="text-rose-500">*</span></label>
+            <textarea id="inpLaporanMateri" rows="5" placeholder="Tuliskan ringkasan materi yang dibahas..." class="w-full p-3 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-sm"></textarea>
+          </div>
+          
+          <div>
+            <label class="block text-xs font-bold mb-1">📋 Catatan Pelaksanaan / Kendala</label>
+            <textarea id="inpCatatanPelaksanaan" rows="3" class="w-full p-3 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-sm"></textarea>
+          </div>
+          
+          <div>
+            <label class="block text-xs font-bold mb-1">💡 Saran</label>
+            <textarea id="inpSaran" rows="2" class="w-full p-3 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-sm"></textarea>
           </div>
           
           <div class="flex gap-2 pt-2">
-            <button type="button" id="btnSimpanLaporan" class="flex-1 py-3 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl text-sm">💾 Simpan Laporan</button>
+            <button type="button" id="btnSimpanLaporan" class="flex-1 py-3 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-bold rounded-xl text-sm shadow-md">💾 Simpan Laporan</button>
           </div>
         </div>
+      </div>
+    </div>
+
+    <!-- DETAIL LAPORAN MODAL -->
+    <div id="detailLaporanModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+      <div class="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-2xl shadow-2xl border border-slate-200 dark:border-slate-700 max-h-[90vh] overflow-y-auto">
+        <div class="sticky top-0 bg-gradient-to-r from-indigo-500 to-purple-500 p-4 rounded-t-2xl flex justify-between items-center z-10">
+          <div class="flex items-center gap-2">
+            <span class="text-2xl">📄</span>
+            <h2 class="text-base font-bold text-white">Detail Laporan Kegiatan</h2>
+          </div>
+          <button onclick="document.getElementById('detailLaporanModal').classList.add('hidden'); document.getElementById('detailLaporanModal').classList.remove('flex');" class="w-7 h-7 flex items-center justify-center rounded-full bg-white/20 hover:bg-white/30 text-white font-bold">✕</button>
+        </div>
+        <div id="detailLaporanContent" class="p-4"></div>
       </div>
     </div>
 
@@ -188,11 +360,13 @@ const sekretarisNama = Astro.url.searchParams.get('nama') || 'Sekretaris';
     const NOMOR_KETUA = '6282140399150';
 
     let allKegiatan = [];
+    let allUsers = [];
+    let selectedUsers = [];
     let currentMonth = new Date().getMonth();
     let currentYear = new Date().getFullYear();
     let sesiCounter = 0;
+    let currentLaporanFilter = 'semua';
 
-    // 🔥 FIX BUG WAKTU (1899-12-30...)
     function formatTime(timeVal) {
       if (!timeVal && timeVal !== 0) return '';
       if (typeof timeVal === 'number') {
@@ -212,28 +386,7 @@ const sekretarisNama = Astro.url.searchParams.get('nama') || 'Sekretaris';
       return timeVal;
     }
 
-    // 🔥 DATABASE HARI LIBUR NASIONAL 2025-2030 (DATA RESMI SKB 3 MENTERI)
-    // + HARI INTERNASIONAL UTAMA (PBB/WHO/UNESCO)
     const hariLibur = {
-      // ========== 2025 ==========
-      '2025-01-01': { nama: 'Tahun Baru Masehi', tipe: 'nasional' },
-      '2025-01-29': { nama: 'Tahun Baru Imlek', tipe: 'nasional' },
-      '2025-03-29': { nama: 'Hari Raya Nyepi', tipe: 'nasional' },
-      '2025-03-31': { nama: 'Idul Fitri 1446 H', tipe: 'nasional' },
-      '2025-04-01': { nama: 'Idul Fitri 1446 H', tipe: 'nasional' },
-      '2025-04-18': { nama: 'Wafat Isa Al Masih', tipe: 'nasional' },
-      '2025-05-01': { nama: 'Hari Buruh Internasional', tipe: 'nasional' },
-      '2025-05-12': { nama: 'Hari Raya Waisak', tipe: 'nasional' },
-      '2025-05-29': { nama: 'Kenaikan Isa Al Masih', tipe: 'nasional' },
-      '2025-06-01': { nama: 'Hari Lahir Pancasila', tipe: 'nasional' },
-      '2025-06-07': { nama: 'Idul Adha 1446 H', tipe: 'nasional' },
-      '2025-06-27': { nama: 'Tahun Baru Islam 1447 H', tipe: 'nasional' },
-      '2025-08-17': { nama: 'Hari Kemerdekaan RI', tipe: 'nasional' },
-      '2025-09-05': { nama: 'Maulid Nabi Muhammad', tipe: 'nasional' },
-      '2025-10-27': { nama: 'Isra Miraj Nabi Muhammad', tipe: 'nasional' },
-      '2025-12-25': { nama: 'Hari Natal', tipe: 'nasional' },
-
-      // ========== 2026 (RESMI) ==========
       '2026-01-01': { nama: 'Tahun Baru Masehi', tipe: 'nasional' },
       '2026-01-16': { nama: 'Isra Mikraj Nabi Muhammad', tipe: 'nasional' },
       '2026-02-17': { nama: 'Tahun Baru Imlek 2577', tipe: 'nasional' },
@@ -248,122 +401,12 @@ const sekretarisNama = Astro.url.searchParams.get('nama') || 'Sekretaris';
       '2026-06-16': { nama: 'Tahun Baru Islam 1448 H', tipe: 'nasional' },
       '2026-08-17': { nama: 'Hari Kemerdekaan RI', tipe: 'nasional' },
       '2026-08-25': { nama: 'Maulid Nabi Muhammad', tipe: 'nasional' },
-      '2026-12-25': { nama: 'Hari Raya Natal', tipe: 'nasional' },
-
-      // ========== 2027 (RESMI) ==========
-      '2027-01-01': { nama: 'Tahun Baru Masehi', tipe: 'nasional' },
-      '2027-01-05': { nama: 'Isra Mikraj Nabi Muhammad', tipe: 'nasional' },
-      '2027-02-06': { nama: 'Tahun Baru Imlek 2578', tipe: 'nasional' },
-      '2027-03-09': { nama: 'Hari Suci Nyepi', tipe: 'nasional' },
-      '2027-03-10': { nama: 'Idul Fitri 1448 H', tipe: 'nasional' },
-      '2027-03-11': { nama: 'Idul Fitri 1448 H', tipe: 'nasional' },
-      '2027-03-26': { nama: 'Wafat Yesus Kristus', tipe: 'nasional' },
-      '2027-05-01': { nama: 'Hari Buruh Internasional', tipe: 'nasional' },
-      '2027-05-06': { nama: 'Kenaikan Yesus Kristus', tipe: 'nasional' },
-      '2027-05-17': { nama: 'Idul Adha 1448 H', tipe: 'nasional' },
-      '2027-05-20': { nama: 'Hari Raya Waisak', tipe: 'nasional' },
-      '2027-06-01': { nama: 'Hari Lahir Pancasila', tipe: 'nasional' },
-      '2027-06-06': { nama: 'Tahun Baru Islam 1449 H', tipe: 'nasional' },
-      '2027-08-15': { nama: 'Maulid Nabi Muhammad', tipe: 'nasional' },
-      '2027-08-17': { nama: 'Hari Kemerdekaan RI', tipe: 'nasional' },
-      '2027-12-25': { nama: 'Hari Raya Natal', tipe: 'nasional' },
-      '2027-12-26': { nama: 'Isra Mikraj Nabi Muhammad', tipe: 'nasional' },
-
-      // ========== 2028 (RESMI) ==========
-      '2028-01-01': { nama: 'Tahun Baru Masehi', tipe: 'nasional' },
-      '2028-01-26': { nama: 'Tahun Baru Imlek 2579', tipe: 'nasional' },
-      '2028-02-26': { nama: 'Idul Fitri 1449 H', tipe: 'nasional' },
-      '2028-02-27': { nama: 'Idul Fitri 1449 H', tipe: 'nasional' },
-      '2028-03-26': { nama: 'Hari Suci Nyepi', tipe: 'nasional' },
-      '2028-04-14': { nama: 'Wafat Yesus Kristus', tipe: 'nasional' },
-      '2028-05-01': { nama: 'Hari Buruh Internasional', tipe: 'nasional' },
-      '2028-05-05': { nama: 'Idul Adha 1449 H', tipe: 'nasional' },
-      '2028-05-09': { nama: 'Hari Raya Waisak', tipe: 'nasional' },
-      '2028-05-25': { nama: 'Kenaikan Isa + Thn Baru Islam', tipe: 'nasional' },
-      '2028-06-01': { nama: 'Hari Lahir Pancasila', tipe: 'nasional' },
-      '2028-08-03': { nama: 'Maulid Nabi Muhammad', tipe: 'nasional' },
-      '2028-08-17': { nama: 'Hari Kemerdekaan RI', tipe: 'nasional' },
-      '2028-12-14': { nama: 'Isra Mikraj Nabi Muhammad', tipe: 'nasional' },
-      '2028-12-25': { nama: 'Hari Raya Natal', tipe: 'nasional' },
-
-      // ========== 2029 (RESMI) ==========
-      '2029-01-01': { nama: 'Tahun Baru Masehi', tipe: 'nasional' },
-      '2029-02-13': { nama: 'Tahun Baru Imlek 2580', tipe: 'nasional' },
-      '2029-02-14': { nama: 'Idul Fitri 1450 H', tipe: 'nasional' },
-      '2029-02-15': { nama: 'Idul Fitri 1450 H', tipe: 'nasional' },
-      '2029-03-15': { nama: 'Hari Suci Nyepi', tipe: 'nasional' },
-      '2029-03-30': { nama: 'Wafat Yesus Kristus', tipe: 'nasional' },
-      '2029-04-24': { nama: 'Idul Adha 1450 H', tipe: 'nasional' },
-      '2029-05-01': { nama: 'Hari Buruh Internasional', tipe: 'nasional' },
-      '2029-05-10': { nama: 'Kenaikan Yesus Kristus', tipe: 'nasional' },
-      '2029-05-14': { nama: 'Tahun Baru Islam 1451 H', tipe: 'nasional' },
-      '2029-05-28': { nama: 'Hari Raya Waisak', tipe: 'nasional' },
-      '2029-06-01': { nama: 'Hari Lahir Pancasila', tipe: 'nasional' },
-      '2029-08-17': { nama: 'Hari Kemerdekaan RI', tipe: 'nasional' },
-      '2029-08-22': { nama: 'Maulid Nabi Muhammad', tipe: 'nasional' },
-      '2029-12-03': { nama: 'Isra Mikraj Nabi Muhammad', tipe: 'nasional' },
-      '2029-12-25': { nama: 'Hari Raya Natal', tipe: 'nasional' },
-
-      // ========== 2030 (TETAP) ==========
-      '2030-01-01': { nama: 'Tahun Baru Masehi', tipe: 'nasional' },
-      '2030-02-12': { nama: 'Tahun Baru Imlek', tipe: 'nasional' },
-      '2030-06-01': { nama: 'Hari Lahir Pancasila', tipe: 'nasional' },
-      '2030-08-17': { nama: 'Hari Kemerdekaan RI', tipe: 'nasional' },
-      '2030-12-25': { nama: 'Hari Natal', tipe: 'nasional' },
-
-      // ========== 🌍 HARI INTERNASIONAL (FIX SETIAP TAHUN - FORMAT MM-DD) ==========
-      '01-24': { nama: 'Hari Pendidikan Internasional', tipe: 'internasional' },
-      '01-27': { nama: 'Hari Peringatan Holocaust', tipe: 'internasional' },
-      '02-04': { nama: 'Hari Kanker Sedunia', tipe: 'internasional' },
-      '02-20': { nama: 'Hari Keadilan Sosial Sedunia', tipe: 'internasional' },
-      '03-08': { nama: 'Hari Perempuan Internasional', tipe: 'internasional' },
-      '03-20': { nama: 'Hari Kebahagiaan Internasional', tipe: 'internasional' },
-      '03-21': { nama: 'Hari Hutan / Down Syndrome', tipe: 'internasional' },
-      '03-22': { nama: 'Hari Air Sedunia', tipe: 'internasional' },
-      '03-23': { nama: 'Hari Meteorologi Sedunia', tipe: 'internasional' },
-      '03-24': { nama: 'Hari TB Sedunia', tipe: 'internasional' },
-      '04-02': { nama: 'Hari Peduli Autisme', tipe: 'internasional' },
-      '04-07': { nama: 'Hari Kesehatan Sedunia', tipe: 'internasional' },
-      '04-22': { nama: 'Hari Bumi Internasional', tipe: 'internasional' },
-      '05-08': { nama: 'Hari Palang Merah Sedunia', tipe: 'internasional' },
-      '05-15': { nama: 'Hari Keluarga Internasional', tipe: 'internasional' },
-      '05-29': { nama: 'Hari Pasukan Perdamaian PBB', tipe: 'internasional' },
-      '05-31': { nama: 'Hari Tanpa Tembakau', tipe: 'internasional' },
-      '06-01': { nama: 'Hari Anak Korban Perang', tipe: 'internasional' },
-      '06-05': { nama: 'Hari Lingkungan Hidup', tipe: 'internasional' },
-      '06-08': { nama: 'Hari Laut Sedunia', tipe: 'internasional' },
-      '06-14': { nama: 'Hari Donor Darah', tipe: 'internasional' },
-      '06-26': { nama: 'Hari Anti Narkotika (HANI)', tipe: 'internasional' },
-      '07-11': { nama: 'Hari Populasi Sedunia', tipe: 'internasional' },
-      '07-18': { nama: 'Hari Nelson Mandela', tipe: 'internasional' },
-      '07-30': { nama: 'Hari Persahabatan', tipe: 'internasional' },
-      '08-12': { nama: 'Hari Remaja Internasional', tipe: 'internasional' },
-      '08-19': { nama: 'Hari Kemanusiaan Sedunia', tipe: 'internasional' },
-      '09-08': { nama: 'Hari Literasi Internasional', tipe: 'internasional' },
-      '09-15': { nama: 'Hari Demokrasi Internasional', tipe: 'internasional' },
-      '09-21': { nama: 'Hari Perdamaian Internasional', tipe: 'internasional' },
-      '10-01': { nama: 'Hari Lansia Internasional', tipe: 'internasional' },
-      '10-05': { nama: 'Hari Guru Sedunia', tipe: 'internasional' },
-      '10-16': { nama: 'Hari Pangan Sedunia', tipe: 'internasional' },
-      '10-24': { nama: 'Hari PBB Internasional', tipe: 'internasional' },
-      '11-10': { nama: 'Hari Sains untuk Perdamaian', tipe: 'internasional' },
-      '11-14': { nama: 'Hari Diabetes Sedunia', tipe: 'internasional' },
-      '11-20': { nama: 'Hari Anak Sedunia', tipe: 'internasional' },
-      '11-25': { nama: 'Hari Anti Kekerasan thd Perempuan', tipe: 'internasional' },
-      '12-01': { nama: 'Hari AIDS Sedunia', tipe: 'internasional' },
-      '12-03': { nama: 'Hari Disabilitas Internasional', tipe: 'internasional' },
-      '12-09': { nama: 'Hari Anti-Korupsi', tipe: 'internasional' },
-      '12-10': { nama: 'Hari HAM Internasional', tipe: 'internasional' },
-      '12-18': { nama: 'Hari Migran Internasional', tipe: 'internasional' }
+      '2026-12-25': { nama: 'Hari Raya Natal', tipe: 'nasional' }
     };
 
-    // 🔥 HELPER: Ambil info libur untuk tanggal tertentu
-    // Prioritas: Nasional (YYYY-MM-DD) > Internasional (MM-DD)
     function getLiburInfo(dateStr) {
-      // Cek dulu apakah ada libur nasional di tanggal spesifik ini
       if (hariLibur[dateStr]) return hariLibur[dateStr];
-      // Jika tidak, cek apakah ada hari internasional (format MM-DD)
-      const mmdd = dateStr.substring(5); // "MM-DD"
+      const mmdd = dateStr.substring(5);
       if (hariLibur[mmdd]) return hariLibur[mmdd];
       return null;
     }
@@ -379,20 +422,30 @@ const sekretarisNama = Astro.url.searchParams.get('nama') || 'Sekretaris';
       });
     }
 
-    document.getElementById('btnViewCalendar')?.addEventListener('click', () => {
-      document.getElementById('calendarView').classList.remove('hidden');
-      document.getElementById('listView').classList.add('hidden');
-      document.getElementById('btnViewCalendar').className = 'flex-1 py-2.5 bg-purple-500 text-white text-sm font-bold rounded-xl shadow-md';
-      document.getElementById('btnViewList').className = 'flex-1 py-2.5 bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-sm font-bold rounded-xl';
-    });
+    function setActiveTab(activeId) {
+      ['calendarView', 'listView', 'laporanView'].forEach(id => {
+        document.getElementById(id).classList.add('hidden');
+      });
+      document.getElementById(activeId).classList.remove('hidden');
+      
+      ['btnViewCalendar', 'btnViewList', 'btnViewLaporan'].forEach(id => {
+        document.getElementById(id).className = 'flex-1 min-w-[100px] py-2.5 bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-sm font-bold rounded-xl';
+      });
+      
+      const activeBtn = {
+        'calendarView': 'btnViewCalendar',
+        'listView': 'btnViewList',
+        'laporanView': 'btnViewLaporan'
+      }[activeId];
+      
+      if (activeBtn) {
+        document.getElementById(activeBtn).className = 'flex-1 min-w-[100px] py-2.5 bg-purple-500 text-white text-sm font-bold rounded-xl shadow-md';
+      }
+    }
 
-    document.getElementById('btnViewList')?.addEventListener('click', () => {
-      document.getElementById('calendarView').classList.add('hidden');
-      document.getElementById('listView').classList.remove('hidden');
-      document.getElementById('btnViewList').className = 'flex-1 py-2.5 bg-purple-500 text-white text-sm font-bold rounded-xl shadow-md';
-      document.getElementById('btnViewCalendar').className = 'flex-1 py-2.5 bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-sm font-bold rounded-xl';
-      renderListView();
-    });
+    document.getElementById('btnViewCalendar')?.addEventListener('click', () => setActiveTab('calendarView'));
+    document.getElementById('btnViewList')?.addEventListener('click', () => { setActiveTab('listView'); renderListView(); });
+    document.getElementById('btnViewLaporan')?.addEventListener('click', () => { setActiveTab('laporanView'); renderLaporanView(); });
 
     document.getElementById('btnTambah')?.addEventListener('click', () => {
       resetForm();
@@ -417,6 +470,84 @@ const sekretarisNama = Astro.url.searchParams.get('nama') || 'Sekretaris';
       renderCalendar();
     });
 
+    document.querySelectorAll('input[name="assignType"]').forEach(radio => {
+      radio.addEventListener('change', function() {
+        const searchSection = document.getElementById('searchUserSection');
+        if (this.value === 'specific') {
+          searchSection.classList.remove('hidden');
+        } else {
+          searchSection.classList.add('hidden');
+          selectedUsers = [];
+          renderSelectedUsers();
+        }
+      });
+    });
+
+    function searchUsers(query) {
+      const resultsDiv = document.getElementById('searchResults');
+      if (!query || query.length < 2) {
+        resultsDiv.innerHTML = '';
+        return;
+      }
+
+      const filtered = allUsers.filter(u => {
+        const nama = (u.Nama || u.nama || '').toLowerCase();
+        const id = (u.ID_User || u.id_user || u.ID || '').toLowerCase();
+        return nama.includes(query.toLowerCase()) || id.includes(query.toLowerCase());
+      }).filter(u => !selectedUsers.find(su => su.ID_User === u.ID_User));
+
+      if (filtered.length === 0) {
+        resultsDiv.innerHTML = '<div class="text-center text-slate-400 text-sm py-2">Tidak ada user ditemukan</div>';
+        return;
+      }
+
+      resultsDiv.innerHTML = filtered.map(u => `
+        <div class="flex items-center justify-between p-2 bg-slate-50 dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-700 hover:border-purple-500 transition-colors cursor-pointer" onclick="selectUser('${u.ID_User}', '${(u.Nama || u.nama || '').replace(/'/g, "\\'")}')">
+          <div class="flex items-center gap-2">
+            <div class="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold text-xs">
+              ${(u.Nama || u.nama || 'U').charAt(0).toUpperCase()}
+            </div>
+            <div>
+              <div class="text-sm font-bold text-slate-900 dark:text-white">${u.Nama || u.nama}</div>
+              <div class="text-xs text-slate-500">ID: ${u.ID_User || u.id_user || u.ID}</div>
+            </div>
+          </div>
+          <button class="px-2 py-1 bg-purple-500 hover:bg-purple-600 text-white text-xs font-bold rounded transition-colors">
+            + Pilih
+          </button>
+        </div>
+      `).join('');
+    }
+
+    function selectUser(id, nama) {
+      if (!selectedUsers.find(u => u.ID_User === id)) {
+        selectedUsers.push({ ID_User: id, Nama: nama });
+        renderSelectedUsers();
+        document.getElementById('searchUserInput').value = '';
+        document.getElementById('searchResults').innerHTML = '';
+      }
+    }
+
+    function removeUser(id) {
+      selectedUsers = selectedUsers.filter(u => u.ID_User !== id);
+      renderSelectedUsers();
+    }
+
+    function renderSelectedUsers() {
+      const container = document.getElementById('selectedUsersList');
+      if (selectedUsers.length === 0) {
+        container.innerHTML = '';
+        return;
+      }
+
+      container.innerHTML = selectedUsers.map(u => `
+        <div class="flex items-center gap-1 px-2 py-1 bg-purple-500/10 border border-purple-500/30 rounded-lg text-xs">
+          <span class="font-semibold text-purple-600 dark:text-purple-400">${u.Nama}</span>
+          <button onclick="removeUser('${u.ID_User}')" class="text-rose-500 hover:text-rose-600 font-bold">✕</button>
+        </div>
+      `).join('');
+    }
+
     function generateTextWA(k) {
       const tgl = new Date(k.Tanggal);
       const hariList = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
@@ -430,51 +561,45 @@ const sekretarisNama = Astro.url.searchParams.get('nama') || 'Sekretaris';
       let tanggalText = `Hari ${hari}, ${tanggalNum} ${bulan} ${tahun}`;
       if (k.Tanggal_Selesai) {
         const tgl2 = new Date(k.Tanggal_Selesai);
-        const hari2 = hariList[tgl2.getDay()];
-        const tanggalNum2 = tgl2.getDate();
-        const bulan2 = bulanList[tgl2.getMonth()];
-        const tahun2 = tgl2.getFullYear();
-        tanggalText += ` s/d Hari ${hari2}, ${tanggalNum2} ${bulan2} ${tahun2}`;
+        tanggalText += ` s/d Hari ${hariList[tgl2.getDay()]}, ${tgl2.getDate()} ${bulanList[tgl2.getMonth()]} ${tgl2.getFullYear()}`;
       }
       
       const jamMulai = formatTime(k.Jam_Mulai);
       const jamSelesai = formatTime(k.Jam_Selesai);
       const jamStr = jamSelesai ? `${jamMulai} - ${jamSelesai} WIB` : `${jamMulai} WIB`;
 
-      let text = `*${k.Judul_Besar}*\n\n`;
-      text += `Mengundang Pemuda Pemudi Sak Desa Tandes Barat pada :\n\n`;
-      text += `📆 _${tanggalText}_\n`;
-      text += `🕣 Pukul ${jamStr}\n`;
+      let text = `السلام عليكم ورحمة الله وبركاته\n\n`;
+      text += `*${k.Judul_Besar}*\n\n`;
+      text += `📆 _${tanggalText}_\n🕐 Pukul ${jamStr}\n`;
       
       let sesiList = [];
       try { sesiList = JSON.parse(k.Sesi_JSON || '[]'); } catch(e) {}
       
       if (sesiList.length > 0) {
-        text += `\n📋 *AGENDA:*\n`;
+        text += `\n📋 *SUSUNAN ACARA:*\n`;
         sesiList.forEach((s, i) => {
-          text += `\n  *${i+1}. ${s.materi || '-'}* (${s.waktu || '-'})\n`;
-          if (s.pengajar) text += `      👤 PIC: ${s.pengajar}\n`;
+          text += `\n*${i+1}. ${s.materi || '-'}*\n   ⏱️ (${s.waktu || '-'})\n`;
+          if (s.pengajar) text += `   ▸ PIC: ${s.pengajar}\n`;
         });
       }
       
-      if (k.MC) text += `\n🎤 MC : ${k.MC}\n`;
+      text += `\n━━━━━━━━━━━━━━━━━━\n`;
+      if (k.MC) text += `🎤 MC : ${k.MC}\n`;
       if (k.Peserta) text += `👥 Peserta : ${k.Peserta}\n`;
       if (k.Tempat) text += `📍 Tempat : ${k.Tempat}\n`;
-      if (k.Deskripsi) text += `\n📝 ${k.Deskripsi}\n`;
-      text += `\nKerjakan karena Allah semoga Allah paring aman selamat lancar dan barokah.\n\n`;
-      text += `ALHAMDULILLAH JAZA KUMULLOHU KHOIRO\n🙏🙏🙏`;
+      if (k.Deskripsi) text += `\n📝 _${k.Deskripsi}_\n`;
+      
+      text += `\nالْحَمْدُ لِلَّهِ وَجَزَاكُمُ اللَّهُ خَيْرًا\n🙏🙏\n\nوالسلام عليكم ورحمة الله وبركاته`;
 
       return text;
     }
 
     function generateWAUrlKetua(k) {
-      const text = generateTextWA(k);
-      return `https://wa.me/${NOMOR_KETUA}?text=${encodeURIComponent(text)}`;
+      return `https://wa.me/${NOMOR_KETUA}?text=${encodeURIComponent(generateTextWA(k))}`;
     }
 
     function generateWAUrlGrup(k) {
-      const text = generateTextWA(k);
-      return `https://wa.me/?text=${encodeURIComponent(text)}`;
+      return `https://wa.me/?text=${encodeURIComponent(generateTextWA(k))}`;
     }
 
     function renderCalendar() {
@@ -504,8 +629,6 @@ const sekretarisNama = Astro.url.searchParams.get('nama') || 'Sekretaris';
         const dateStr = `${currentYear}-${String(currentMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
         const dayOfWeek = date.getDay();
         const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
-        
-        // 🔥 PAKAI HELPER BARU (prioritas: nasional > internasional)
         const liburInfo = getLiburInfo(dateStr);
         const isLiburNasional = liburInfo && liburInfo.tipe === 'nasional';
         const isLiburInternasional = liburInfo && liburInfo.tipe === 'internasional';
@@ -563,16 +686,14 @@ const sekretarisNama = Astro.url.searchParams.get('nama') || 'Sekretaris';
       const bulanList = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
       const dateDisplay = `${hariList[dateObj.getDay()]}, ${dateObj.getDate()} ${bulanList[dateObj.getMonth()]} ${dateObj.getFullYear()}`;
       
-      // 🔥 PAKAI HELPER BARU
       const liburInfo = getLiburInfo(dateStr);
       const isWeekend = dateObj.getDay() === 0 || dateObj.getDay() === 6;
 
-      let html = `<div class="p-4">
-        <h3 class="font-bold text-base mb-1">${dateDisplay}</h3>`;
+      let html = `<div class="p-4"><h3 class="font-bold text-base mb-1">${dateDisplay}</h3>`;
       
       if (liburInfo) {
         const badgeColor = liburInfo.tipe === 'nasional' ? 'bg-rose-500/20 text-rose-600 border-rose-500/30' : 'bg-blue-500/20 text-blue-600 border-blue-500/30';
-        const tipeLabel = liburInfo.tipe === 'nasional' ? '🇮🇩 Libur Nasional' : '🌍 Hari Internasional';
+        const tipeLabel = liburInfo.tipe === 'nasional' ? '🇮 Libur Nasional' : '🌍 Hari Internasional';
         html += `<div class="mb-2 p-2 ${badgeColor} border rounded-lg">
           <div class="text-[10px] font-bold uppercase">${tipeLabel}</div>
           <div class="text-sm font-bold">${liburInfo.nama}</div>
@@ -593,7 +714,7 @@ const sekretarisNama = Astro.url.searchParams.get('nama') || 'Sekretaris';
                 `<div class="text-[11px] bg-purple-50 dark:bg-purple-900/20 p-2 rounded border-l-2 border-purple-500">
                   <div class="font-bold text-purple-600">Agenda ${i+1}: ${s.waktu || '-'}</div>
                   <div class="text-slate-700 dark:text-slate-300">📋 ${s.materi || '-'}</div>
-                  ${s.pengajar ? `<div class="text-slate-500 text-[10px]">👤 PIC: ${s.pengajar}</div>` : ''}
+                  ${s.pengajar ? `<div class="text-slate-500 text-[10px]">▸ PIC: ${s.pengajar}</div>` : ''}
                 </div>`
               ).join('') + '</div>';
             }
@@ -605,23 +726,14 @@ const sekretarisNama = Astro.url.searchParams.get('nama') || 'Sekretaris';
           html += `<div class="mt-3 p-3 bg-purple-50 dark:bg-purple-900/20 rounded-xl border border-purple-200 dark:border-purple-800">
             <div class="font-bold text-sm text-slate-900 dark:text-white">${k.Judul_Besar}</div>
             <div class="text-[11px] text-slate-500 mt-1">🕐 ${formatTime(k.Jam_Mulai) || '-'}${k.Jam_Selesai ? ' - ' + formatTime(k.Jam_Selesai) : ''}</div>
-            ${k.MC ? `<div class="text-[11px] text-slate-500">🎤 MC: ${k.MC}</div>` : ''}
+            ${k.MC ? `<div class="text-[11px] text-slate-500">🎤 MC/Moderator: ${k.MC}</div>` : ''}
             ${k.Tempat ? `<div class="text-[11px] text-slate-500">📍 ${k.Tempat}</div>` : ''}
             ${sesiHTML}
             <div class="grid grid-cols-2 gap-2 mt-2">
-              <a href="${urlKetua}" target="_blank" rel="noopener noreferrer"
-                class="py-1.5 bg-green-500/10 text-green-600 hover:bg-green-500 hover:text-white text-[10px] font-bold rounded-md text-center transition-all">
-                📱 Kirim ke Ketua
-              </a>
-              <a href="${urlGrup}" target="_blank" rel="noopener noreferrer"
-                class="py-1.5 bg-blue-500/10 text-blue-600 hover:bg-blue-500 hover:text-white text-[10px] font-bold rounded-md text-center transition-all">
-                📢 Kirim ke Grup
-              </a>
+              <a href="${urlKetua}" target="_blank" class="py-1.5 bg-green-500/10 text-green-600 hover:bg-green-500 hover:text-white text-[10px] font-bold rounded-md text-center">📱 Ketua</a>
+              <a href="${urlGrup}" target="_blank" class="py-1.5 bg-blue-500/10 text-blue-600 hover:bg-blue-500 hover:text-white text-[10px] font-bold rounded-md text-center">📢 Grup</a>
             </div>
-            <button onclick="openLaporanModal(${k.Row}, '${(k.Judul_Besar||'').replace(/'/g,"\\'")}')" 
-              class="w-full py-1.5 mt-2 bg-amber-500/10 text-amber-600 hover:bg-amber-500 hover:text-white text-[10px] font-bold rounded-md text-center transition-all">
-              📝 Lihat / Input Laporan
-            </button>
+            <button onclick="openLaporanModal(${k.Row}, '${(k.Judul_Besar||'').replace(/'/g,"\\'")}')" class="w-full py-1.5 mt-2 bg-amber-500/10 text-amber-600 hover:bg-amber-500 hover:text-white text-[10px] font-bold rounded-md">📝 Input Laporan</button>
           </div>`;
         });
       }
@@ -659,6 +771,14 @@ const sekretarisNama = Astro.url.searchParams.get('nama') || 'Sekretaris';
         else if (diffDays <= 7) badge = `<span class="px-2 py-0.5 bg-amber-500/20 text-amber-600 text-[10px] font-bold rounded-full">H-${diffDays}</span>`;
         else badge = `<span class="px-2 py-0.5 bg-emerald-500/20 text-emerald-600 text-[10px] font-bold rounded-full">H-${diffDays}</span>`;
 
+        // 🔥 Prioritas badge
+        let prioritasBadge = '';
+        if (k.Prioritas === 'Penting') {
+          prioritasBadge = '<span class="px-2 py-0.5 bg-amber-500/20 text-amber-600 text-[10px] font-bold rounded-full">⚠️ Penting</span>';
+        } else if (k.Prioritas === 'Urgent') {
+          prioritasBadge = '<span class="px-2 py-0.5 bg-rose-500/20 text-rose-600 text-[10px] font-bold rounded-full animate-pulse">🚨 Urgent</span>';
+        }
+
         const tglStr = tglObj.toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
         const tglSelesaiStr = k.Tanggal_Selesai ? new Date(k.Tanggal_Selesai).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : '';
         const dateRange = tglSelesaiStr ? `${tglStr} - ${tglSelesaiStr}` : tglStr;
@@ -671,7 +791,7 @@ const sekretarisNama = Astro.url.searchParams.get('nama') || 'Sekretaris';
               `<div class="text-[11px] bg-purple-50 dark:bg-purple-900/20 p-2 rounded border-l-2 border-purple-500">
                 <div class="font-bold text-purple-600">Agenda ${i+1}: ${s.waktu || '-'}</div>
                 <div class="text-slate-700 dark:text-slate-300">📋 ${s.materi || '-'}</div>
-                ${s.pengajar ? `<div class="text-slate-500 text-[10px]">👤 PIC: ${s.pengajar}</div>` : ''}
+                ${s.pengajar ? `<div class="text-slate-500 text-[10px]">▸ PIC: ${s.pengajar}</div>` : ''}
               </div>`
             ).join('') + '</div>';
           }
@@ -686,6 +806,7 @@ const sekretarisNama = Astro.url.searchParams.get('nama') || 'Sekretaris';
               <div class="flex items-center gap-2 flex-wrap mb-1">
                 <h3 class="font-bold text-sm text-slate-900 dark:text-white">${k.Judul_Besar || '-'}</h3>
                 ${badge}
+                ${prioritasBadge}
               </div>
               <div class="text-xs text-slate-500 space-y-0.5">
                 <div>🗓️ ${dateRange} • 🕐 ${formatTime(k.Jam_Mulai) || '-'}${k.Jam_Selesai ? ' - ' + formatTime(k.Jam_Selesai) : ''}</div>
@@ -697,21 +818,117 @@ const sekretarisNama = Astro.url.searchParams.get('nama') || 'Sekretaris';
               ${k.Deskripsi ? `<div class="mt-2 text-xs text-slate-400 italic">${k.Deskripsi}</div>` : ''}
             </div>
             <div class="flex flex-col gap-1 shrink-0">
-              <a href="${urlKetua}" target="_blank" rel="noopener noreferrer"
-                class="px-3 py-1.5 bg-green-500/10 text-green-600 hover:bg-green-500 hover:text-white text-[10px] font-bold rounded-md text-center transition-all">📱 Ketua</a>
-              <a href="${urlGrup}" target="_blank" rel="noopener noreferrer"
-                class="px-3 py-1.5 bg-blue-500/10 text-blue-600 hover:bg-blue-500 hover:text-white text-[10px] font-bold rounded-md text-center transition-all">📢 Grup</a>
-              <button onclick="editKegiatan(${k.Row})" 
-                class="px-3 py-1.5 bg-amber-500/10 text-amber-600 hover:bg-amber-500 hover:text-white text-[10px] font-bold rounded-md">✏️</button>
-              <button onclick="openLaporanModal(${k.Row}, '${(k.Judul_Besar||'').replace(/'/g,"\\'")}')" 
-                class="px-3 py-1.5 bg-indigo-500/10 text-indigo-600 hover:bg-indigo-500 hover:text-white text-[10px] font-bold rounded-md">📝</button>
-              <button onclick="hapusKegiatan(${k.Row},'${(k.Judul_Besar||'').replace(/'/g,"\\'")}')" 
-                class="px-3 py-1.5 bg-rose-500/10 text-rose-600 hover:bg-rose-500 hover:text-white text-[10px] font-bold rounded-md">🗑️</button>
+              <a href="${urlKetua}" target="_blank" class="px-3 py-1.5 bg-green-500/10 text-green-600 hover:bg-green-500 hover:text-white text-[10px] font-bold rounded-md text-center">📱 Ketua</a>
+              <a href="${urlGrup}" target="_blank" class="px-3 py-1.5 bg-blue-500/10 text-blue-600 hover:bg-blue-500 hover:text-white text-[10px] font-bold rounded-md text-center">📢 Grup</a>
+              <button onclick="editKegiatan(${k.Row})" class="px-3 py-1.5 bg-amber-500/10 text-amber-600 hover:bg-amber-500 hover:text-white text-[10px] font-bold rounded-md">✏️</button>
+              <button onclick="hapusKegiatan(${k.Row},'${(k.Judul_Besar||'').replace(/'/g,"\\'")}')" class="px-3 py-1.5 bg-rose-500/10 text-rose-600 hover:bg-rose-500 hover:text-white text-[10px] font-bold rounded-md">🗑️</button>
             </div>
           </div>
         </div>`;
       }).join('');
     }
+
+    function renderLaporanView() {
+      const container = document.getElementById('laporanList');
+      if (!container) return;
+      
+      const total = allKegiatan.length;
+      const terlaksana = allKegiatan.filter(k => k.Status_Pelaksanaan === 'Terlaksana').length;
+      const belum = allKegiatan.filter(k => !k.Status_Pelaksanaan).length;
+      const batal = allKegiatan.filter(k => k.Status_Pelaksanaan === 'Dibatalkan' || k.Status_Pelaksanaan === 'Ditunda').length;
+      
+      document.getElementById('statTotal').textContent = total;
+      document.getElementById('statTerlaksana').textContent = terlaksana;
+      document.getElementById('statBelum').textContent = belum;
+      document.getElementById('statBatal').textContent = batal;
+      
+      let filtered = allKegiatan;
+      if (currentLaporanFilter === 'terlaksana') filtered = allKegiatan.filter(k => k.Status_Pelaksanaan === 'Terlaksana');
+      else if (currentLaporanFilter === 'belum') filtered = allKegiatan.filter(k => !k.Status_Pelaksanaan);
+      else if (currentLaporanFilter === 'batal') filtered = allKegiatan.filter(k => k.Status_Pelaksanaan === 'Dibatalkan' || k.Status_Pelaksanaan === 'Ditunda');
+      
+      if (filtered.length === 0) {
+        container.innerHTML = '<div class="bg-white dark:bg-slate-800 rounded-2xl p-8 text-center text-slate-400"><div class="text-5xl mb-3">📭</div><p class="font-bold">Belum ada laporan</p></div>';
+        return;
+      }
+      
+      container.innerHTML = filtered.map(k => {
+        const tglObj = new Date(k.Tanggal);
+        const tglStr = tglObj.toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+        
+        let statusBadge = '', statusClass = '', statusIcon = '';
+        if (k.Status_Pelaksanaan === 'Terlaksana') { statusBadge = 'Terlaksana'; statusClass = 'bg-emerald-500/10 text-emerald-600 border-emerald-500/30'; statusIcon = '✅'; }
+        else if (k.Status_Pelaksanaan === 'Dibatalkan') { statusBadge = 'Dibatalkan'; statusClass = 'bg-rose-500/10 text-rose-600 border-rose-500/30'; statusIcon = '❌'; }
+        else if (k.Status_Pelaksanaan === 'Ditunda') { statusBadge = 'Ditunda'; statusClass = 'bg-amber-500/10 text-amber-600 border-amber-500/30'; statusIcon = '⏸️'; }
+        else { statusBadge = 'Belum Dilaporkan'; statusClass = 'bg-slate-500/10 text-slate-600 border-slate-500/30'; statusIcon = '⏳'; }
+        
+        const laporanPreview = k.Laporan_Materi ? (k.Laporan_Materi.length > 100 ? k.Laporan_Materi.substring(0, 100) + '...' : k.Laporan_Materi) : '<span class="italic text-slate-400">Belum ada laporan</span>';
+        const hasReport = k.Status_Pelaksanaan === 'Terlaksana' || k.Status_Pelaksanaan === 'Dibatalkan' || k.Status_Pelaksanaan === 'Ditunda';
+        
+        return `
+          <div class="bg-white dark:bg-slate-800 rounded-2xl p-4 shadow-sm border border-slate-200 dark:border-slate-700">
+            <div class="flex items-center gap-2 flex-wrap mb-1">
+              <h3 class="font-bold text-sm text-slate-900 dark:text-white">${k.Judul_Besar || '-'}</h3>
+              <span class="px-2 py-0.5 border rounded-full text-[10px] font-bold ${statusClass}">${statusIcon} ${statusBadge}</span>
+            </div>
+            <div class="text-xs text-slate-500">🗓️ ${tglStr}</div>
+            <div class="bg-slate-50 dark:bg-slate-900/40 rounded-lg p-3 mt-2 border-l-4 border-purple-500">
+              <div class="text-[10px] font-bold text-purple-600 uppercase mb-1">📖 Perkembangan Materi</div>
+              <div class="text-xs text-slate-700 dark:text-slate-300">${laporanPreview}</div>
+            </div>
+            <div class="flex gap-2 mt-3">
+              <button onclick="showDetailLaporan(${k.Row})" class="flex-1 py-2 bg-indigo-500/10 text-indigo-600 hover:bg-indigo-500 hover:text-white text-xs font-bold rounded-lg">📄 Detail</button>
+              <button onclick="openLaporanModal(${k.Row}, '${(k.Judul_Besar||'').replace(/'/g,"\\'")}')" class="flex-1 py-2 ${hasReport ? 'bg-amber-500/10 text-amber-600' : 'bg-emerald-500 text-white'} text-xs font-bold rounded-lg">${hasReport ? '✏️ Edit' : '📝 Input'}</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    window.filterLaporan = function(filter) {
+      currentLaporanFilter = filter;
+      document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.className = btn.dataset.filter === filter 
+          ? 'filter-btn px-3 py-1.5 bg-purple-500 text-white text-xs font-bold rounded-lg'
+          : 'filter-btn px-3 py-1.5 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold rounded-lg';
+      });
+      renderLaporanView();
+    };
+
+    window.showDetailLaporan = function(row) {
+      const k = allKegiatan.find(x => x.Row === row);
+      if (!k) return;
+      
+      const tglStr = new Date(k.Tanggal).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+      
+      let statusBadge = '', statusClass = '';
+      if (k.Status_Pelaksanaan === 'Terlaksana') { statusBadge = '✅ Terlaksana'; statusClass = 'bg-emerald-500/10 text-emerald-600 border-emerald-500/30'; }
+      else if (k.Status_Pelaksanaan === 'Dibatalkan') { statusBadge = '❌ Dibatalkan'; statusClass = 'bg-rose-500/10 text-rose-600 border-rose-500/30'; }
+      else if (k.Status_Pelaksanaan === 'Ditunda') { statusBadge = '⏸️ Ditunda'; statusClass = 'bg-amber-500/10 text-amber-600 border-amber-500/30'; }
+      else { statusBadge = '⏳ Belum Dilaporkan'; statusClass = 'bg-slate-500/10 text-slate-600 border-slate-500/30'; }
+      
+      const html = `
+        <div class="space-y-4">
+          <div class="bg-slate-50 dark:bg-slate-800 rounded-xl p-4 border border-slate-200 dark:border-slate-700">
+            <h3 class="font-bold text-lg text-slate-900 dark:text-white mb-2">${k.Judul_Besar || '-'}</h3>
+            <div class="text-sm text-slate-600 dark:text-slate-400 space-y-1">
+              <div>🗓️ ${tglStr}</div>
+              <div>🕐 ${formatTime(k.Jam_Mulai) || '-'}${k.Jam_Selesai ? ' - ' + formatTime(k.Jam_Selesai) : ''} WIB</div>
+              ${k.Tempat ? `<div>📍 ${k.Tempat}</div>` : ''}
+            </div>
+            <div class="mt-3"><span class="inline-block px-3 py-1 border rounded-full text-xs font-bold ${statusClass}">${statusBadge}</span></div>
+          </div>
+          ${k.Laporan_Materi ? `<div class="bg-purple-50 dark:bg-purple-900/20 rounded-xl p-4 border border-purple-200 dark:border-purple-800"><div class="text-xs font-bold text-purple-600 uppercase mb-2">📖 Perkembangan Materi</div><div class="text-sm whitespace-pre-wrap">${k.Laporan_Materi}</div></div>` : ''}
+          ${k.Catatan_Pelaksanaan ? `<div class="bg-amber-50 dark:bg-amber-900/20 rounded-xl p-4 border border-amber-200 dark:border-amber-800"><div class="text-xs font-bold text-amber-600 uppercase mb-2">📋 Catatan</div><div class="text-sm whitespace-pre-wrap">${k.Catatan_Pelaksanaan}</div></div>` : ''}
+          ${k.Saran ? `<div class="bg-emerald-50 dark:bg-emerald-900/20 rounded-xl p-4 border border-emerald-200 dark:border-emerald-800"><div class="text-xs font-bold text-emerald-600 uppercase mb-2">💡 Saran</div><div class="text-sm whitespace-pre-wrap">${k.Saran}</div></div>` : ''}
+          <button onclick="openLaporanModal(${k.Row}, '${(k.Judul_Besar||'').replace(/'/g,"\\'")}')" class="w-full py-3 bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold rounded-xl text-sm">✏️ Edit Laporan</button>
+        </div>
+      `;
+      
+      document.getElementById('detailLaporanContent').innerHTML = html;
+      document.getElementById('detailLaporanModal').classList.remove('hidden');
+      document.getElementById('detailLaporanModal').classList.add('flex');
+    };
 
     const form = document.getElementById('formKegiatan');
     const editRow = document.getElementById('editRowNumber');
@@ -727,6 +944,11 @@ const sekretarisNama = Astro.url.searchParams.get('nama') || 'Sekretaris';
       document.getElementById('btnSubmit').textContent = '💾 Simpan Kegiatan';
       sesiContainer.innerHTML = '';
       sesiCounter = 0;
+      selectedUsers = [];
+      renderSelectedUsers();
+      document.querySelector('input[name="assignType"][value="general"]').checked = true;
+      document.querySelector('input[name="prioritas"][value="Normal"]').checked = true;
+      document.getElementById('searchUserSection').classList.add('hidden');
     }
 
     document.getElementById('btnAddSesi')?.addEventListener('click', () => {
@@ -737,21 +959,12 @@ const sekretarisNama = Astro.url.searchParams.get('nama') || 'Sekretaris';
       div.innerHTML = `
         <div class="flex items-center justify-between mb-2">
           <span class="text-xs font-bold text-purple-600">Agenda #${sesiCounter}</span>
-          <button type="button" onclick="this.closest('[data-sesi-id]').remove()" class="w-6 h-6 flex items-center justify-center rounded-full bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white text-xs font-bold">✕</button>
+          <button type="button" onclick="this.closest('[data-sesi-id]').remove()" class="w-6 h-6 flex items-center justify-center rounded-full bg-rose-500/10 text-rose-500 text-xs font-bold">✕</button>
         </div>
         <div class="grid grid-cols-3 gap-2">
-          <div>
-            <label class="block text-[10px] font-bold mb-1">Waktu</label>
-            <input type="text" class="sesi-waktu w-full p-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-xs" placeholder="19:30-20:00"/>
-          </div>
-          <div class="col-span-2">
-            <label class="block text-[10px] font-bold mb-1">Nama Agenda</label>
-            <input type="text" class="sesi-materi w-full p-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-xs" placeholder="Tausiyah / Games / Doa / dll"/>
-          </div>
-          <div class="col-span-3">
-            <label class="block text-[10px] font-bold mb-1">PIC / Pengisi (opsional)</label>
-            <input type="text" class="sesi-pengajar w-full p-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-xs" placeholder="Ustadz Ahmad / Panitia / dll"/>
-          </div>
+          <input type="text" class="sesi-waktu w-full p-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-xs" placeholder="19:30-20:00"/>
+          <input type="text" class="sesi-materi w-full p-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-xs col-span-2" placeholder="Nama Agenda"/>
+          <input type="text" class="sesi-pengajar w-full p-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-xs col-span-3" placeholder="PIC / Pengisi (opsional)"/>
         </div>
       `;
       sesiContainer.appendChild(div);
@@ -773,10 +986,19 @@ const sekretarisNama = Astro.url.searchParams.get('nama') || 'Sekretaris';
       });
       const sesiJSON = JSON.stringify(sesiList);
 
-      let pengajar = '';
-      if (sesiList.length > 0) {
-        pengajar = sesiList.map(s => s.pengajar).filter(p => p).join(', ');
+      let pengajar = sesiList.map(s => s.pengajar).filter(p => p).join(', ');
+
+      const assignType = document.querySelector('input[name="assignType"]:checked')?.value || 'general';
+      let assignedUsers = '[]';
+      if (assignType === 'specific') {
+        if (selectedUsers.length === 0) {
+          alert('⚠️ Pilih minimal 1 user!');
+          return;
+        }
+        assignedUsers = JSON.stringify(selectedUsers.map(u => u.ID_User));
       }
+
+      const prioritas = document.querySelector('input[name="prioritas"]:checked')?.value || 'Normal';
 
       const payload = new URLSearchParams({
         action: isEdit ? 'update_jadwal_kegiatan' : 'tambah_jadwal_kegiatan',
@@ -793,7 +1015,9 @@ const sekretarisNama = Astro.url.searchParams.get('nama') || 'Sekretaris';
         deskripsi: document.getElementById('inpDeskripsi').value,
         status: 'Dijadwalkan',
         dibuat_oleh: SEKRETARIS_NAMA,
-        sesi_json: sesiJSON
+        sesi_json: sesiJSON,
+        assigned_users: assignedUsers,
+        prioritas: prioritas
       });
 
       if (isEdit) payload.append('row_number', editRow.value);
@@ -827,15 +1051,37 @@ const sekretarisNama = Astro.url.searchParams.get('nama') || 'Sekretaris';
       editRow.value = row;
       document.getElementById('inpTanggal').value = k.Tanggal ? new Date(k.Tanggal).toISOString().slice(0,10) : '';
       document.getElementById('inpTanggalSelesai').value = k.Tanggal_Selesai ? new Date(k.Tanggal_Selesai).toISOString().slice(0,10) : '';
-      
       document.getElementById('inpJamMulai').value = k.Jam_Mulai ? formatTime(k.Jam_Mulai) : '';
       document.getElementById('inpJamSelesai').value = k.Jam_Selesai ? formatTime(k.Jam_Selesai) : '';
-      
       document.getElementById('inpJudulBesar').value = k.Judul_Besar || '';
       document.getElementById('inpMC').value = k.MC || '';
       document.getElementById('inpTempat').value = k.Tempat || '';
       document.getElementById('inpPeserta').value = k.Peserta || '';
       document.getElementById('inpDeskripsi').value = k.Deskripsi || '';
+      
+      // Load prioritas
+      const prioritas = k.Prioritas || 'Normal';
+      document.querySelector(`input[name="prioritas"][value="${prioritas}"]`).checked = true;
+      
+      // Load assigned users
+      selectedUsers = [];
+      try {
+        const assignedUsersArr = JSON.parse(k.Assigned_Users || '[]');
+        if (assignedUsersArr.length === 0 || assignedUsersArr.includes('ALL')) {
+          document.querySelector('input[name="assignType"][value="general"]').checked = true;
+          document.getElementById('searchUserSection').classList.add('hidden');
+        } else {
+          document.querySelector('input[name="assignType"][value="specific"]').checked = true;
+          document.getElementById('searchUserSection').classList.remove('hidden');
+          assignedUsersArr.forEach(userId => {
+            const user = allUsers.find(u => (u.ID_User || u.id_user || u.ID) === userId);
+            if (user) selectedUsers.push({ ID_User: userId, Nama: user.Nama || user.nama || 'User' });
+          });
+          renderSelectedUsers();
+        }
+      } catch(e) {
+        document.querySelector('input[name="assignType"][value="general"]').checked = true;
+      }
       
       sesiContainer.innerHTML = '';
       sesiCounter = 0;
@@ -849,21 +1095,12 @@ const sekretarisNama = Astro.url.searchParams.get('nama') || 'Sekretaris';
           div.innerHTML = `
             <div class="flex items-center justify-between mb-2">
               <span class="text-xs font-bold text-purple-600">Agenda #${sesiCounter}</span>
-              <button type="button" onclick="this.closest('[data-sesi-id]').remove()" class="w-6 h-6 flex items-center justify-center rounded-full bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white text-xs font-bold">✕</button>
+              <button type="button" onclick="this.closest('[data-sesi-id]').remove()" class="w-6 h-6 flex items-center justify-center rounded-full bg-rose-500/10 text-rose-500 text-xs font-bold">✕</button>
             </div>
             <div class="grid grid-cols-3 gap-2">
-              <div>
-                <label class="block text-[10px] font-bold mb-1">Waktu</label>
-                <input type="text" class="sesi-waktu w-full p-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-xs" value="${s.waktu || ''}" placeholder="19:30-20:00"/>
-              </div>
-              <div class="col-span-2">
-                <label class="block text-[10px] font-bold mb-1">Nama Agenda</label>
-                <input type="text" class="sesi-materi w-full p-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-xs" value="${s.materi || ''}" placeholder="Tausiyah / Games / Doa / dll"/>
-              </div>
-              <div class="col-span-3">
-                <label class="block text-[10px] font-bold mb-1">PIC / Pengisi</label>
-                <input type="text" class="sesi-pengajar w-full p-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-xs" value="${s.pengajar || ''}" placeholder="Ustadz Ahmad / Panitia / dll"/>
-              </div>
+              <input type="text" class="sesi-waktu w-full p-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-xs" value="${s.waktu || ''}" placeholder="Waktu"/>
+              <input type="text" class="sesi-materi w-full p-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-xs col-span-2" value="${s.materi || ''}" placeholder="Agenda"/>
+              <input type="text" class="sesi-pengajar w-full p-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-xs col-span-3" value="${s.pengajar || ''}" placeholder="PIC"/>
             </div>
           `;
           sesiContainer.appendChild(div);
@@ -881,27 +1118,28 @@ const sekretarisNama = Astro.url.searchParams.get('nama') || 'Sekretaris';
       if (!confirm(`Hapus kegiatan "${judul}"?`)) return;
       try {
         const payload = new URLSearchParams({ action: 'hapus_jadwal_kegiatan', row_number: String(row) });
-        await fetch(API_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: payload.toString()
-        });
+        await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: payload.toString() });
         loadKegiatan();
       } catch (err) {
         alert('Gagal hapus: ' + err.message);
       }
     };
 
-    // ==========================================
-    // 🔥 FITUR LAPORAN KEGIATAN
-    // ==========================================
     window.openLaporanModal = function(row, judul) {
       const k = allKegiatan.find(x => x.Row === row);
       if (!k) return;
       
       document.getElementById('laporanRowNumber').value = row;
       document.getElementById('laporanJudul').textContent = judul;
-      document.getElementById('inpLaporan').value = k.Laporan || '';
+      document.getElementById('laporanTanggal').textContent = `🗓️ ${new Date(k.Tanggal).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })} • 🕐 ${formatTime(k.Jam_Mulai) || '-'}`;
+      
+      const status = k.Status_Pelaksanaan || 'Terlaksana';
+      document.querySelectorAll('input[name="statusPelaksanaan"]').forEach(r => r.checked = (r.value === status));
+      
+      document.getElementById('inpJumlahHadir').value = k.Jumlah_Hadir || '';
+      document.getElementById('inpLaporanMateri').value = k.Laporan_Materi || '';
+      document.getElementById('inpCatatanPelaksanaan').value = k.Catatan_Pelaksanaan || '';
+      document.getElementById('inpSaran').value = k.Saran || '';
       
       document.getElementById('laporanModal').classList.remove('hidden');
       document.getElementById('laporanModal').classList.add('flex');
@@ -909,10 +1147,11 @@ const sekretarisNama = Astro.url.searchParams.get('nama') || 'Sekretaris';
 
     document.getElementById('btnSimpanLaporan')?.addEventListener('click', async () => {
       const row = document.getElementById('laporanRowNumber').value;
-      const laporan = document.getElementById('inpLaporan').value;
+      const statusPelaksanaan = document.querySelector('input[name="statusPelaksanaan"]:checked')?.value || 'Terlaksana';
+      const laporanMateri = document.getElementById('inpLaporanMateri').value;
       
-      if (!laporan.trim()) {
-        alert('Laporan tidak boleh kosong!');
+      if (!laporanMateri.trim() && statusPelaksanaan === 'Terlaksana') {
+        alert('⚠️ Perkembangan materi wajib diisi!');
         return;
       }
       
@@ -920,21 +1159,21 @@ const sekretarisNama = Astro.url.searchParams.get('nama') || 'Sekretaris';
         const payload = new URLSearchParams({
           action: 'update_laporan_kegiatan',
           row_number: row,
-          laporan: laporan
+          status_pelaksanaan: statusPelaksanaan,
+          jumlah_hadir: document.getElementById('inpJumlahHadir').value,
+          laporan_materi: laporanMateri,
+          catatan_pelaksanaan: document.getElementById('inpCatatanPelaksanaan').value,
+          saran: document.getElementById('inpSaran').value
         });
         
-        const res = await fetch(API_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: payload.toString()
-        });
+        const res = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: payload.toString() });
         const result = await res.text();
         
         if (result.includes('KATA_KUNCI_SUKSES')) {
           alert('✅ Laporan berhasil disimpan!');
           document.getElementById('laporanModal').classList.add('hidden');
           document.getElementById('laporanModal').classList.remove('flex');
-          loadKegiatan(); 
+          loadKegiatan();
         } else {
           alert('❌ Gagal: ' + result);
         }
@@ -948,8 +1187,10 @@ const sekretarisNama = Astro.url.searchParams.get('nama') || 'Sekretaris';
         const res = await fetch(API_URL);
         const data = await res.json();
         allKegiatan = data.jadwalKegiatan?.data || [];
+        allUsers = data.users || [];
         renderCalendar();
         renderListView();
+        renderLaporanView();
       } catch (err) {
         console.error('Error:', err);
       }

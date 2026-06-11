@@ -29,6 +29,8 @@ export default defineConfig({
         background_color: '#090d16',
         display: 'standalone',
         start_url: '/',
+        // 🔥 TAMBAHAN FIREBASE - JANGAN DIHAPUS!
+        gcm_sender_id: '103953800507',
         icons: [
           {
             src: 'pwa-192x192.png',

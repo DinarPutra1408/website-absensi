@@ -119,10 +119,142 @@ const pctHadir3Bln = Math.min(100, Math.round((userStats.Total_Hadir / (targets.
     .banner-slide {
       animation: slide-down 0.4s ease-out;
     }
+    
+    @keyframes urgent-pulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.6); }
+      50% { box-shadow: 0 0 0 15px rgba(239, 68, 68, 0); }
+    }
+    
+    .urgent-card {
+      animation: urgent-pulse 1.5s infinite;
+    }
+    
+    @keyframes modal-pop {
+      0% { transform: scale(0.5); opacity: 0; }
+      70% { transform: scale(1.05); }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    
+    .modal-pop {
+      animation: modal-pop 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    }
+    
+    @keyframes urgent-shake {
+      0%, 100% { transform: translateX(0); }
+      10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+      20%, 40%, 60%, 80% { transform: translateX(5px); }
+    }
+    
+    .urgent-shake {
+      animation: urgent-shake 0.8s ease-in-out;
+    }
   </style>
   <script is:inline src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+  <!-- 🔥🔥🔥 FIREBASE CLOUD MESSAGING - TAMBAHAN BARU 🔥🔥🔥 -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
+    import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-messaging.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBz811o1BVe_1ItQWkJzpGoZPnbkCmEUKM",
+      authDomain: "mm-tandes-notif.firebaseapp.com",
+      projectId: "mm-tandes-notif",
+      storageBucket: "mm-tandes-notif.firebasestorage.app",
+      messagingSenderId: "508016475673",
+      appId: "1:508016475673:web:7946713ec521d327f43488"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const messaging = getMessaging(app);
+
+    // VAPID Key dari Firebase Console
+    const VAPID_KEY = 'BEelHD2UPoXAeUYzo3b902PilArUckljTsBDJP57TW6YkBrmWt7CVB8wM82ePqUGz-KJa4C1EqklufNxAFzi6JE';
+
+    async function initFirebaseNotif() {
+      try {
+        // Cek support
+        if (!('serviceWorker' in navigator) || !('Notification' in window)) {
+          console.log('⚠️ Browser tidak support push notification');
+          return;
+        }
+
+        // Request permission
+        const permission = await Notification.requestPermission();
+        if (permission !== 'granted') {
+          console.log('⚠️ Permission notifikasi ditolak');
+          return;
+        }
+
+        console.log('✅ Permission granted');
+
+        // Get FCM Token
+        const token = await getToken(messaging, {
+          vapidKey: VAPID_KEY
+        });
+
+        if (token) {
+          console.log('🔑 FCM Token:', token);
+          localStorage.setItem('fcmToken', token);
+          localStorage.setItem('fcmUserId', document.body.getAttribute('data-user-id') || '');
+
+          // Notif sukses pertama kali
+          const hasNotified = localStorage.getItem('fcmFirstNotif');
+          if (!hasNotified) {
+            new Notification('✅ Notifikasi Aktif!', {
+              body: 'Kamu akan menerima pengingat kegiatan walau app ditutup.',
+              icon: '/pwa-192x192.png',
+              badge: '/pwa-192x192.png'
+            });
+            localStorage.setItem('fcmFirstNotif', 'true');
+          }
+        } else {
+          console.log('⚠️ Tidak bisa mendapatkan token. Pastikan permission sudah diberikan.');
+        }
+
+      } catch (error) {
+        console.error('❌ Error init Firebase:', error);
+      }
+    }
+
+    // Handle foreground messages (saat app dibuka)
+    onMessage(messaging, (payload) => {
+      console.log('📩 Foreground message:', payload);
+      
+      const title = payload.notification?.title || '🔔 Pengingat Kegiatan';
+      const options = {
+        body: payload.notification?.body || 'Ada kegiatan mendatang!',
+        icon: '/pwa-192x192.png',
+        badge: '/pwa-192x192.png',
+        vibrate: [200, 100, 200],
+        data: payload.data || {}
+      };
+
+      // Tampilkan notifikasi walau app dibuka
+      if (Notification.permission === 'granted') {
+        const notif = new Notification(title, options);
+        notif.onclick = () => {
+          window.focus();
+          if (payload.data?.url) {
+            window.location.href = payload.data.url;
+          }
+        };
+      }
+    });
+
+    // Init setelah DOM ready
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initFirebaseNotif);
+    } else {
+      initFirebaseNotif();
+    }
+  </script>
+  <!-- 🔥🔥🔥 END FIREBASE 🔥🔥🔥 -->
 </head>
-<body class="bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 min-h-screen p-4 sm:p-6 md:p-8 font-sans antialiased transition-colors duration-300">
+<body 
+  data-user-id={userId}
+  data-user-nama={userNama}
+  class="bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 min-h-screen p-4 sm:p-6 md:p-8 font-sans antialiased transition-colors duration-300">
   
   <!-- 🔔 REMINDER BANNER (sticky di atas) -->
   <div id="reminderBanner" class="hidden fixed top-0 left-0 right-0 z-50 bg-gradient-to-r from-indigo-500 to-purple-500 text-white shadow-lg banner-slide">
@@ -130,7 +262,10 @@ const pctHadir3Bln = Math.min(100, Math.round((userStats.Total_Hadir / (targets.
       <div class="flex items-center gap-3 flex-1 min-w-0">
         <div class="text-2xl flex-shrink-0">🔔</div>
         <div class="flex-1 min-w-0">
-          <div class="text-[10px] font-bold uppercase tracking-wider opacity-90">Pengingat Kegiatan</div>
+          <div class="flex items-center gap-2 mb-0.5">
+            <span id="reminderBannerPriority" class="hidden px-2 py-0.5 bg-white/20 rounded-full text-[9px] font-bold uppercase"></span>
+            <span class="text-[10px] font-bold uppercase tracking-wider opacity-90">Pengingat Kegiatan</span>
+          </div>
           <div id="reminderBannerText" class="text-sm font-bold truncate">Memuat...</div>
           <div id="reminderBannerCountdown" class="text-xs opacity-90 mt-0.5"></div>
         </div>
@@ -232,8 +367,8 @@ const pctHadir3Bln = Math.min(100, Math.round((userStats.Total_Hadir / (targets.
             📅
           </div>
           <div>
-            <h3 class="text-base font-bold text-slate-900 dark:text-white">Kegiatan Mendatang</h3>
-            <p class="text-[11px] text-slate-500 dark:text-slate-400">Jadwal pengajian & kegiatan lainnya</p>
+            <h3 class="text-base font-bold text-slate-900 dark:text-white">Pengumuman Kegiatan</h3>
+            <p class="text-[11px] text-slate-500 dark:text-slate-400">Jadwal yang di-assign untuk kamu</p>
           </div>
         </div>
         <button id="btnRefreshKegiatan" class="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500 transition-colors" title="Refresh">
@@ -329,15 +464,57 @@ const pctHadir3Bln = Math.min(100, Math.round((userStats.Total_Hadir / (targets.
 
   </div>
 
-  <!-- 🔔 REMINDER MODAL -->
-  <div id="reminderModal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+  <!-- 🔔 AUTO POPUP MODAL (MUNCUL OTOMATIS!) -->
+  <div id="autoPopupModal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-md z-[100] flex items-center justify-center p-4">
+    <div class="modal-pop bg-white dark:bg-slate-900 rounded-2xl w-full max-w-lg shadow-2xl border-2 border-indigo-500/50 max-h-[90vh] overflow-y-auto">
+      <div id="autoPopupHeader" class="sticky top-0 bg-gradient-to-r from-indigo-600 to-purple-600 p-5 rounded-t-2xl border-b-4 border-white/30">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <div id="autoPopupIcon" class="text-4xl">🔔</div>
+            <div>
+              <h2 id="autoPopupTitle" class="text-lg font-black text-white drop-shadow-lg">Pengumuman Penting!</h2>
+              <p id="autoPopupSubtitle" class="text-xs text-white/90 font-semibold mt-0.5">Ada kegiatan untuk kamu</p>
+            </div>
+          </div>
+          <button id="closeAutoPopup" class="w-10 h-10 flex items-center justify-center rounded-full bg-white/20 hover:bg-white/30 text-white font-black transition-all border-2 border-white/40 hover:scale-110">✕</button>
+        </div>
+      </div>
+      
+      <div class="p-5">
+        <div id="autoPopupContent" class="space-y-3"></div>
+        
+        <div class="flex gap-3 mt-5">
+          <button id="btnIngatkanNanti" class="flex-1 py-3 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-bold rounded-xl text-sm transition-all shadow-lg border-2 border-white/30">
+            🔔 Ingatkan Nanti
+          </button>
+          <button id="btnMengerti" class="flex-1 py-3 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-bold rounded-xl text-sm transition-all shadow-lg border-2 border-white/30">
+            ✓ Mengerti
+          </button>
+        </div>
+        
+        <p class="text-[10px] text-center text-slate-500 dark:text-slate-400 mt-3">
+          💡 Kamu bisa klik tombol lonceng 🔔 di atas untuk lihat semua pengumuman kapan saja
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 🔔 REMINDER MODAL (Manual - klik lonceng) -->
+  <div id="reminderModal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-[90] flex items-center justify-center p-4">
     <div class="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-md shadow-2xl border border-slate-200 dark:border-slate-700 max-h-[85vh] overflow-y-auto">
-      <div class="sticky top-0 bg-white dark:bg-slate-900 p-4 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center">
+      <div class="sticky top-0 bg-white dark:bg-slate-900 p-4 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center z-10">
         <div class="flex items-center gap-2">
           <span class="text-2xl">🔔</span>
-          <h2 class="text-base font-bold text-slate-900 dark:text-white">Pengingat Kegiatan</h2>
+          <h2 class="text-base font-bold text-slate-900 dark:text-white">Semua Kegiatan</h2>
         </div>
         <button id="closeReminderModal" class="w-7 h-7 flex items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 text-xs font-bold">✕</button>
+      </div>
+      
+      <!-- 🔥 TAB FILTER -->
+      <div class="flex gap-1 p-3 bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-700">
+        <button onclick="switchReminderTab('semua')" id="tabSemua" class="flex-1 py-2 bg-indigo-500 text-white text-xs font-bold rounded-lg transition-all">📋 Semua</button>
+        <button onclick="switchReminderTab('mendatang')" id="tabMendatang" class="flex-1 py-2 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold rounded-lg transition-all">🔜 Mendatang</button>
+        <button onclick="switchReminderTab('lampau')" id="tabLampau" class="flex-1 py-2 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold rounded-lg transition-all">📜 Lampau</button>
       </div>
       
       <div class="p-4">
@@ -352,6 +529,11 @@ const pctHadir3Bln = Math.min(100, Math.round((userStats.Total_Hadir / (targets.
 
   <script>
     const GOOGLE_API_URL = import.meta.env.PUBLIC_SECRET_SHEETS_API_URL;
+const CURRENT_USER_ID = document.body.getAttribute('data-user-id') || '';
+const CURRENT_USER_NAMA = document.body.getAttribute('data-user-nama') || '';
+
+console.log('🔍 DEBUG - User ID dari data-attribute:', CURRENT_USER_ID);
+console.log('🔍 DEBUG - User Nama dari data-attribute:', CURRENT_USER_NAMA);
 
     interface KegiatanItem {
       Tanggal: string;
@@ -360,13 +542,16 @@ const pctHadir3Bln = Math.min(100, Math.round((userStats.Total_Hadir / (targets.
       Jam_Selesai?: unknown;
       Tempat?: string;
       MC?: string;
+      Assigned_Users?: string;
+      Prioritas?: string;
     }
 
     let allKegiatan: KegiatanItem[] = [];
     let countdownInterval: number | null = null;
     let hasPlayedSound = false;
+    let currentReminderTab = 'semua';
 
-    // 🔥 FIX BUG WAKTU (1899-12-30...) dari Google Sheets
+    // 🔥 FIX BUG WAKTU
     function formatTime(timeVal: unknown): string {
       if (!timeVal && timeVal !== 0) return '';
       if (typeof timeVal === 'number') {
@@ -389,24 +574,126 @@ const pctHadir3Bln = Math.min(100, Math.round((userStats.Total_Hadir / (targets.
       return timeVal ? String(timeVal) : '';
     }
 
-    // 🔔 Sound Notification
-    function playNotificationSound() {
+    // 🔥 NORMALISASI ID
+    function normalizeId(id: any): string {
+      if (!id) return '';
+      return String(id).trim().toLowerCase();
+    }
+
+    // 🔥 CEK ASSIGNMENT DENGAN LOG DETAIL
+    function isAssignedToUser(k: KegiatanItem): boolean {
+      const raw = k.Assigned_Users;
+      const judul = k.Judul_Besar || 'Tanpa Judul';
+      
+      console.log(`\n🔍 [Assign Check] "${judul}"`);
+      console.log(`  My ID: "${CURRENT_USER_ID}"`);
+      console.log(`  Raw Assigned_Users:`, raw, `(type: ${typeof raw})`);
+      
+      // CASE 1: KOSONG = GENERAL
+      if (!raw || raw === '' || raw === '[]' || raw === 'null' || raw === '""') {
+        console.log(`  ✅ KOSONG = General (muncul ke semua)`);
+        return true;
+      }
+      
+      let assignedUsers: any[] = [];
+      
+      // Parse
+      if (typeof raw === 'string') {
+        try {
+          assignedUsers = JSON.parse(raw);
+          console.log(`  ✅ Parsed JSON:`, assignedUsers);
+        } catch (e) {
+          console.log(`  ⚠️ Bukan JSON, treating as single ID`);
+          assignedUsers = [raw];
+        }
+      } else if (Array.isArray(raw)) {
+        assignedUsers = raw;
+      } else {
+        assignedUsers = [String(raw)];
+      }
+      
+      // CASE 2: BERISI ALL
+      if (assignedUsers.includes('ALL') || assignedUsers.includes('all')) {
+        console.log(`  ✅ Berisi ALL = General`);
+        return true;
+      }
+      
+      // CASE 3: MATCH ID
+      const myIdNorm = normalizeId(CURRENT_USER_ID);
+      const match = assignedUsers.some((userId: any) => {
+        const userIdNorm = normalizeId(userId);
+        const isMatch = userIdNorm === myIdNorm;
+        if (isMatch) {
+          console.log(`  ✅✅✅ MATCH! "${userId}" === "${CURRENT_USER_ID}"`);
+        }
+        return isMatch;
+      });
+      
+      if (!match) {
+        console.log(`  ❌ TIDAK MATCH. List:`, assignedUsers);
+      }
+      
+      return match;
+    }
+
+    // 🔥 GET PRIORITAS BADGE
+    function getPrioritasBadge(prioritas: string | undefined): string {
+      if (prioritas === 'Urgent') {
+        return '<span class="px-2 py-0.5 bg-rose-500 text-white text-[10px] font-bold rounded-full animate-pulse">🚨 URGENT</span>';
+      } else if (prioritas === 'Penting') {
+        return '<span class="px-2 py-0.5 bg-amber-500 text-white text-[10px] font-bold rounded-full">⚠️ PENTING</span>';
+      }
+      return '';
+    }
+
+    // 🔥 GET CARD STYLE
+    function getCardStyle(prioritas: string | undefined): { cardClass: string; borderClass: string; shadow: string } {
+      if (prioritas === 'Urgent') {
+        return {
+          cardClass: 'bg-rose-50 dark:bg-rose-900/20 urgent-card',
+          borderClass: 'border-rose-500/50 border-2',
+          shadow: 'shadow-lg shadow-rose-500/20'
+        };
+      } else if (prioritas === 'Penting') {
+        return {
+          cardClass: 'bg-amber-50 dark:bg-amber-900/20',
+          borderClass: 'border-amber-500/50 border-2',
+          shadow: 'shadow-md shadow-amber-500/10'
+        };
+      }
+      return {
+        cardClass: 'bg-slate-50 dark:bg-slate-900/40',
+        borderClass: 'border-slate-200 dark:border-white/5',
+        shadow: ''
+      };
+    }
+
+    // 🔔 Sound
+    function playNotificationSound(isUrgent: boolean = false) {
       try {
         const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
         const audioContext = new AudioCtx();
-        const oscillator = audioContext.createOscillator();
-        const gainNode = audioContext.createGain();
         
-        oscillator.connect(gainNode);
-        gainNode.connect(audioContext.destination);
+        const beepCount = isUrgent ? 3 : 1;
+        const frequency = isUrgent ? 1000 : 800;
         
-        oscillator.frequency.value = 800;
-        oscillator.type = 'sine';
-        gainNode.gain.setValueAtTime(0.2, audioContext.currentTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
-        
-        oscillator.start(audioContext.currentTime);
-        oscillator.stop(audioContext.currentTime + 0.3);
+        for (let i = 0; i < beepCount; i++) {
+          const oscillator = audioContext.createOscillator();
+          const gainNode = audioContext.createGain();
+          
+          oscillator.connect(gainNode);
+          gainNode.connect(audioContext.destination);
+          
+          oscillator.frequency.value = frequency;
+          oscillator.type = 'sine';
+          
+          const startTime = audioContext.currentTime + (i * 0.3);
+          gainNode.gain.setValueAtTime(0.2, startTime);
+          gainNode.gain.exponentialRampToValueAtTime(0.01, startTime + 0.2);
+          
+          oscillator.start(startTime);
+          oscillator.stop(startTime + 0.2);
+        }
       } catch (e) {}
     }
 
@@ -518,7 +805,7 @@ const pctHadir3Bln = Math.min(100, Math.round((userStats.Total_Hadir / (targets.
       const qrContainer = document.getElementById('qrcode');
       if (!qrContainer) return;
       const userIdStr = qrContainer.getAttribute('data-uid');
-      // @ts-ignore - QRCode loaded via CDN
+      // @ts-ignore
       if (userIdStr && typeof QRCode !== 'undefined') {
         const qrSize = window.innerWidth < 640 ? 160 : 180;
         // @ts-ignore
@@ -533,12 +820,11 @@ const pctHadir3Bln = Math.min(100, Math.round((userStats.Total_Hadir / (targets.
         });
       }
       
-      // Load kegiatan
       fetchKegiatan();
     });
 
     // ==========================================
-    // 🔔 SISTEM PENGINGAT KEGIATAN
+    // 🔔 FETCH KEGIATAN
     // ==========================================
     
     async function fetchKegiatan() {
@@ -546,82 +832,234 @@ const pctHadir3Bln = Math.min(100, Math.round((userStats.Total_Hadir / (targets.
       if (!list) return;
       
       try {
+        console.log(`\n🔄 ========================================`);
+        console.log(`🔄 User Login: "${CURRENT_USER_ID}" (${CURRENT_USER_NAMA})`);
+        console.log(`🔄 ========================================`);
+        
         const res = await fetch(GOOGLE_API_URL);
         if (!res.ok) throw new Error('Network error');
         
         const data = await res.json();
-        console.log('📦 Data dari API:', data);
         
-        // FIX: Ambil data kegiatan dengan benar
-        allKegiatan = [];
+        let allKegiatanRaw: KegiatanItem[] = [];
         if (data.jadwalKegiatan?.data && Array.isArray(data.jadwalKegiatan.data)) {
-          allKegiatan = data.jadwalKegiatan.data as KegiatanItem[];
+          allKegiatanRaw = data.jadwalKegiatan.data as KegiatanItem[];
         }
         
-        console.log(`📅 Total kegiatan: ${allKegiatan.length}`);
+        console.log(`\n📊 Total kegiatan di database: ${allKegiatanRaw.length}`);
+        
+        // 🔥 FILTER: Hanya yang di-assign
+        allKegiatan = allKegiatanRaw.filter(k => {
+          const assigned = isAssignedToUser(k);
+          console.log(`  → "${k.Judul_Besar}" - Assigned: ${assigned}`);
+          return assigned;
+        });
+        
+        console.log(`\n✅ Kegiatan untuk user ini: ${allKegiatan.length}`);
+        allKegiatan.forEach(k => {
+          console.log(`  • "${k.Judul_Besar}" - Prioritas: ${k.Prioritas || 'Normal'}`);
+        });
         
         const now = new Date();
-        const sevenDaysLater = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+        now.setHours(0, 0, 0, 0);
         
-        // Filter kegiatan dalam 7 hari ke depan
-        const upcomingEvents = allKegiatan.filter((k: KegiatanItem) => {
-          const tgl = new Date(k.Tanggal);
-          return !isNaN(tgl.getTime()) && tgl >= now && tgl <= sevenDaysLater;
-        }).sort((a: KegiatanItem, b: KegiatanItem) => new Date(a.Tanggal).getTime() - new Date(b.Tanggal).getTime());
-        
-        console.log(`🔔 Kegiatan mendatang: ${upcomingEvents.length}`);
-        
-        if (upcomingEvents.length > 0) {
-          renderUpcomingEvents(upcomingEvents);
-          showReminderBanner(upcomingEvents[0]);
-          updateReminderBadge(upcomingEvents.length);
-          startCountdown(upcomingEvents[0]);
+        // SORT
+        allKegiatan = allKegiatan.sort((a: KegiatanItem, b: KegiatanItem) => {
+          const priorityOrder: Record<string, number> = { 'Urgent': 0, 'Penting': 1, 'Normal': 2 };
+          const aPriority = priorityOrder[a.Prioritas || 'Normal'] ?? 2;
+          const bPriority = priorityOrder[b.Prioritas || 'Normal'] ?? 2;
           
-          // Putar suara untuk kegiatan hari ini
-          const todayEvent = upcomingEvents.find((k: KegiatanItem) => {
-            const tgl = new Date(k.Tanggal);
-            return tgl.toDateString() === now.toDateString();
-          });
-          
-          if (todayEvent && !hasPlayedSound) {
-            setTimeout(() => {
-              playNotificationSound();
-              const bellIcon = document.getElementById('bellIcon');
-              if (bellIcon) {
-                bellIcon.classList.add('bell-animate');
-                setTimeout(() => bellIcon.classList.remove('bell-animate'), 800);
-              }
-            }, 1000);
-            hasPlayedSound = true;
+          if (aPriority !== bPriority) {
+            return aPriority - bPriority;
           }
-        } else {
-          list.innerHTML = `
-            <div class="text-center py-6 text-slate-400 text-sm">
-              <div class="text-3xl mb-2">✨</div>
-              <p>Tidak ada kegiatan dalam 7 hari ke depan</p>
-            </div>
-          `;
-          document.getElementById('reminderBanner')?.classList.add('hidden');
-          document.getElementById('badgeReminder')?.classList.add('hidden');
+          
+          return new Date(a.Tanggal).getTime() - new Date(b.Tanggal).getTime();
+        });
+        
+        // Render (7 hari ke depan)
+        const sevenDaysLater = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+        const nextWeekEvents = allKegiatan.filter((k: KegiatanItem) => {
+          const tgl = new Date(k.Tanggal);
+          tgl.setHours(0, 0, 0, 0);
+          return tgl >= now && tgl <= sevenDaysLater;
+        });
+        
+        renderUpcomingEvents(nextWeekEvents);
+        
+        if (nextWeekEvents.length > 0) {
+          showReminderBanner(nextWeekEvents[0]);
+          startCountdown(nextWeekEvents[0]);
+        }
+        
+        const upcomingCount = allKegiatan.filter((k: KegiatanItem) => {
+          const tgl = new Date(k.Tanggal);
+          tgl.setHours(0, 0, 0, 0);
+          return tgl >= now;
+        }).length;
+        
+        updateReminderBadge(upcomingCount);
+        showAutoPopup(allKegiatan);
+        
+        const todayEvent = allKegiatan.find((k: KegiatanItem) => {
+          const tgl = new Date(k.Tanggal);
+          tgl.setHours(0, 0, 0, 0);
+          return tgl.getTime() === now.getTime();
+        });
+        
+        if (todayEvent && !hasPlayedSound) {
+          setTimeout(() => {
+            const isUrgent = todayEvent.Prioritas === 'Urgent';
+            playNotificationSound(isUrgent);
+            const bellIcon = document.getElementById('bellIcon');
+            if (bellIcon) {
+              bellIcon.classList.add('bell-animate');
+              setTimeout(() => bellIcon.classList.remove('bell-animate'), 800);
+            }
+          }, 1500);
+          hasPlayedSound = true;
+        }
+        
+        if (allKegiatan.length === 0) {
+          console.log('⚠️ TIDAK ADA kegiatan yang di-assign!');
+          console.log('💡 Cek Assigned_Users di Google Sheets harus: ["USR101"] atau ["ALL"]');
         }
       } catch (err) {
-        console.error('❌ Error fetch:', err);
+        console.error('❌ Error:', err);
         list.innerHTML = `
           <div class="text-center py-6 text-rose-500 text-sm">
-            <p>⚠️ Gagal memuat data kegiatan</p>
+            <p>⚠️ Gagal memuat</p>
             <button onclick="fetchKegiatan()" class="mt-2 px-3 py-1 bg-indigo-500 text-white rounded-lg text-xs">Coba Lagi</button>
           </div>
         `;
       }
     }
 
+    // 🔥 AUTO POPUP
+    function showAutoPopup(events: KegiatanItem[]) {
+      const modal = document.getElementById('autoPopupModal');
+      const content = document.getElementById('autoPopupContent');
+      const header = document.getElementById('autoPopupHeader');
+      const icon = document.getElementById('autoPopupIcon');
+      const title = document.getElementById('autoPopupTitle');
+      const subtitle = document.getElementById('autoPopupSubtitle');
+      
+      if (!modal || !content || !header || !icon || !title || !subtitle) return;
+      
+      const now = new Date();
+      now.setHours(0, 0, 0, 0);
+      
+      const upcomingEvents = events.filter((k: KegiatanItem) => {
+        const tgl = new Date(k.Tanggal);
+        tgl.setHours(0, 0, 0, 0);
+        return tgl >= now;
+      });
+      
+      if (upcomingEvents.length === 0) return;
+      
+      const lastShown = localStorage.getItem('autoPopupShown');
+      const today = new Date().toDateString();
+      
+      const urgentOrToday = upcomingEvents.filter((k: KegiatanItem) => {
+        const tgl = new Date(k.Tanggal);
+        tgl.setHours(0, 0, 0, 0);
+        return tgl.getTime() === now.getTime() || k.Prioritas === 'Urgent' || k.Prioritas === 'Penting';
+      });
+      
+      if (urgentOrToday.length === 0 && lastShown === today) return;
+      
+      const topPriority = upcomingEvents[0]?.Prioritas || 'Normal';
+      
+      if (topPriority === 'Urgent') {
+        header.className = 'sticky top-0 bg-gradient-to-r from-rose-600 to-red-600 p-5 rounded-t-2xl border-b-4 border-white/30';
+        icon.textContent = '🚨';
+        title.textContent = 'PERINGATAN URGENT!';
+        subtitle.textContent = 'Segera perhatikan!';
+        setTimeout(() => {
+          modal.querySelector('.modal-pop')?.classList.add('urgent-shake');
+          setTimeout(() => modal.querySelector('.modal-pop')?.classList.remove('urgent-shake'), 800);
+        }, 500);
+      } else if (topPriority === 'Penting') {
+        header.className = 'sticky top-0 bg-gradient-to-r from-amber-500 to-orange-500 p-5 rounded-t-2xl border-b-4 border-white/30';
+        icon.textContent = '⚠️';
+        title.textContent = 'Pengumuman Penting!';
+        subtitle.textContent = 'Ada kegiatan penting';
+      } else {
+        header.className = 'sticky top-0 bg-gradient-to-r from-indigo-600 to-purple-600 p-5 rounded-t-2xl border-b-4 border-white/30';
+        icon.textContent = '🔔';
+        title.textContent = 'Pengumuman Kegiatan';
+        subtitle.textContent = `Halo ${CURRENT_USER_NAMA}`;
+      }
+      
+      content.innerHTML = upcomingEvents.slice(0, 5).map((k: KegiatanItem) => {
+        const tgl = new Date(k.Tanggal);
+        const diffTime = tgl.getTime() - now.getTime();
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        
+        let timeBadge = '';
+        let badgeClass = '';
+        
+        if (diffDays === 0) {
+          timeBadge = '⚡ HARI INI';
+          badgeClass = 'bg-rose-500/20 text-rose-600 dark:text-rose-400 border-rose-500/30';
+        } else if (diffDays === 1) {
+          timeBadge = '🔥 BESOK';
+          badgeClass = 'bg-amber-500/20 text-amber-600 dark:text-amber-400 border-amber-500/30';
+        } else {
+          timeBadge = `📅 H-${diffDays}`;
+          badgeClass = 'bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 border-indigo-500/30';
+        }
+        
+        const tanggalStr = tgl.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long' });
+        const jamMulai = formatTime(k.Jam_Mulai);
+        const jamSelesai = formatTime(k.Jam_Selesai);
+        const jamStr = jamMulai ? (jamSelesai ? `${jamMulai} - ${jamSelesai}` : jamMulai) : '-';
+        
+        const style = getCardStyle(k.Prioritas);
+        const prioritasBadge = getPrioritasBadge(k.Prioritas);
+        
+        return `
+          <div class="${style.cardClass} rounded-xl p-3 border ${style.borderClass} ${style.shadow}">
+            <div class="flex items-start justify-between gap-2 mb-2">
+              <h4 class="font-bold text-sm text-slate-900 dark:text-white flex-1">${k.Judul_Besar || '-'}</h4>
+              <div class="flex flex-col gap-1 items-end shrink-0">
+                ${prioritasBadge}
+                <span class="${badgeClass} px-2 py-0.5 border rounded-full text-[10px] font-bold whitespace-nowrap">${timeBadge}</span>
+              </div>
+            </div>
+            <div class="text-xs text-slate-600 dark:text-slate-400 space-y-0.5">
+              <div>🗓️ ${tanggalStr}</div>
+              <div>🕐 ${jamStr} WIB</div>
+              ${k.Tempat ? `<div>📍 ${k.Tempat}</div>` : ''}
+              ${k.MC ? `<div>🎤 MC: ${k.MC}</div>` : ''}
+            </div>
+          </div>
+        `;
+      }).join('');
+      
+      modal.classList.remove('hidden');
+      localStorage.setItem('autoPopupShown', today);
+      playNotificationSound(topPriority === 'Urgent');
+    }
+
     function renderUpcomingEvents(events: KegiatanItem[]) {
       const list = document.getElementById('upcomingEventsList');
       if (!list) return;
       
-      list.innerHTML = events.slice(0, 3).map((k: KegiatanItem) => {
+      if (events.length === 0) {
+        list.innerHTML = `
+          <div class="text-center py-6 text-slate-400 text-sm">
+            <div class="text-3xl mb-2">📭</div>
+            <p>Tidak ada kegiatan dalam 7 hari</p>
+            <p class="text-xs mt-1">Klik 🔔 untuk lihat semua</p>
+          </div>
+        `;
+        return;
+      }
+      
+      list.innerHTML = events.slice(0, 5).map((k: KegiatanItem) => {
         const tgl = new Date(k.Tanggal);
         const now = new Date();
+        now.setHours(0, 0, 0, 0);
         const diffTime = tgl.getTime() - now.getTime();
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
         const diffHours = Math.floor(diffTime / (1000 * 60 * 60));
@@ -640,24 +1078,28 @@ const pctHadir3Bln = Math.min(100, Math.round((userStats.Total_Hadir / (targets.
           badgeClass = 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/30';
         }
         
-        const tanggalStr = tgl.toLocaleDateString('id-ID', { 
-          weekday: 'long', day: 'numeric', month: 'long' 
-        });
-        
+        const tanggalStr = tgl.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long' });
         const jamMulai = formatTime(k.Jam_Mulai);
         const jamSelesai = formatTime(k.Jam_Selesai);
         const jamStr = jamMulai ? (jamSelesai ? `${jamMulai} - ${jamSelesai}` : jamMulai) : '-';
         
+        const style = getCardStyle(k.Prioritas);
+        const prioritasBadge = getPrioritasBadge(k.Prioritas);
+        
         return `
-          <div class="bg-slate-50 dark:bg-slate-900/40 rounded-xl p-3 border border-slate-200 dark:border-white/5">
+          <div class="${style.cardClass} rounded-xl p-3 border ${style.borderClass} ${style.shadow} transition-all hover:scale-[1.01]">
             <div class="flex items-start justify-between gap-2 mb-2">
               <h4 class="font-bold text-sm text-slate-900 dark:text-white flex-1">${k.Judul_Besar || '-'}</h4>
-              <span class="${badgeClass} px-2 py-0.5 border rounded-full text-[10px] font-bold whitespace-nowrap">${timeBadge}</span>
+              <div class="flex flex-col gap-1 items-end shrink-0">
+                ${prioritasBadge}
+                <span class="${badgeClass} px-2 py-0.5 border rounded-full text-[10px] font-bold whitespace-nowrap">${timeBadge}</span>
+              </div>
             </div>
             <div class="text-xs text-slate-500 dark:text-slate-400 space-y-0.5">
               <div>🗓️ ${tanggalStr}</div>
               <div>🕐 ${jamStr} WIB</div>
               ${k.Tempat ? `<div>📍 ${k.Tempat}</div>` : ''}
+              ${k.MC ? `<div>🎤 MC: ${k.MC}</div>` : ''}
             </div>
           </div>
         `;
@@ -668,6 +1110,7 @@ const pctHadir3Bln = Math.min(100, Math.round((userStats.Total_Hadir / (targets.
       const banner = document.getElementById('reminderBanner');
       const text = document.getElementById('reminderBannerText');
       const countdown = document.getElementById('reminderBannerCountdown');
+      const priorityBadge = document.getElementById('reminderBannerPriority');
       const closeBtn = document.getElementById('closeReminderBanner');
       const mainContent = document.getElementById('mainContent') as HTMLElement | null;
       
@@ -677,6 +1120,26 @@ const pctHadir3Bln = Math.min(100, Math.round((userStats.Total_Hadir / (targets.
       const today = new Date().toDateString();
       
       if (lastClosed === today) return;
+      
+      if (event.Prioritas === 'Urgent') {
+        banner.className = 'fixed top-0 left-0 right-0 z-50 bg-gradient-to-r from-rose-600 to-red-600 text-white shadow-lg banner-slide';
+      } else if (event.Prioritas === 'Penting') {
+        banner.className = 'fixed top-0 left-0 right-0 z-50 bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-lg banner-slide';
+      } else {
+        banner.className = 'fixed top-0 left-0 right-0 z-50 bg-gradient-to-r from-indigo-500 to-purple-500 text-white shadow-lg banner-slide';
+      }
+      
+      if (priorityBadge) {
+        if (event.Prioritas === 'Urgent') {
+          priorityBadge.textContent = '🚨 URGENT';
+          priorityBadge.classList.remove('hidden');
+        } else if (event.Prioritas === 'Penting') {
+          priorityBadge.textContent = '⚠️ PENTING';
+          priorityBadge.classList.remove('hidden');
+        } else {
+          priorityBadge.classList.add('hidden');
+        }
+      }
       
       banner.classList.remove('hidden');
       if (mainContent) mainContent.style.marginTop = '80px';
@@ -734,8 +1197,11 @@ const pctHadir3Bln = Math.min(100, Math.round((userStats.Total_Hadir / (targets.
       countdownInterval = window.setInterval(updateCountdown, 60000);
     }
 
-    // ====== MODAL PENGINGAT ======
-    document.getElementById('btnReminder')?.addEventListener('click', () => showReminderModal());
+    // ====== MODAL BUTTONS ======
+    document.getElementById('btnReminder')?.addEventListener('click', () => {
+      currentReminderTab = 'semua';
+      showReminderModal();
+    });
     document.getElementById('closeReminderModal')?.addEventListener('click', () => {
       document.getElementById('reminderModal')?.classList.add('hidden');
     });
@@ -746,68 +1212,130 @@ const pctHadir3Bln = Math.min(100, Math.round((userStats.Total_Hadir / (targets.
       hasPlayedSound = false;
       fetchKegiatan();
     });
+    
+    document.getElementById('closeAutoPopup')?.addEventListener('click', () => {
+      document.getElementById('autoPopupModal')?.classList.add('hidden');
+    });
+    document.getElementById('btnMengerti')?.addEventListener('click', () => {
+      document.getElementById('autoPopupModal')?.classList.add('hidden');
+    });
+    document.getElementById('btnIngatkanNanti')?.addEventListener('click', () => {
+      document.getElementById('autoPopupModal')?.classList.add('hidden');
+      localStorage.removeItem('autoPopupShown');
+      setTimeout(() => {
+        if (allKegiatan.length > 0) showAutoPopup(allKegiatan);
+      }, 5 * 60 * 1000);
+    });
+
+    (window as any).switchReminderTab = function(tab: string) {
+      currentReminderTab = tab;
+      ['tabSemua', 'tabMendatang', 'tabLampau'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+          if (id === `tab${tab.charAt(0).toUpperCase() + tab.slice(1)}`) {
+            el.className = 'flex-1 py-2 bg-indigo-500 text-white text-xs font-bold rounded-lg transition-all';
+          } else {
+            el.className = 'flex-1 py-2 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold rounded-lg transition-all';
+          }
+        }
+      });
+      renderReminderContent();
+    };
 
     function showReminderModal() {
       const modal = document.getElementById('reminderModal');
-      const content = document.getElementById('reminderModalContent');
-      if (!modal || !content) return;
-      
-      const now = new Date();
-      const upcomingEvents = allKegiatan.filter((k: KegiatanItem) => {
-        const tgl = new Date(k.Tanggal);
-        return !isNaN(tgl.getTime()) && tgl >= now;
-      }).sort((a: KegiatanItem, b: KegiatanItem) => new Date(a.Tanggal).getTime() - new Date(b.Tanggal).getTime()).slice(0, 5);
-      
-      if (upcomingEvents.length === 0) {
-        content.innerHTML = `<div class="text-center py-8 text-slate-400 text-sm">✨ Tidak ada kegiatan mendatang</div>`;
-      } else {
-        content.innerHTML = upcomingEvents.map((k: KegiatanItem) => {
-          const tgl = new Date(k.Tanggal);
-          const diffDays = Math.ceil((tgl.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-          
-          let badge = '';
-          let badgeClass = '';
-          
-          if (diffDays === 0) {
-            badge = '⚡ HARI INI';
-            badgeClass = 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/30';
-          } else if (diffDays === 1) {
-            badge = '🔥 BESOK';
-            badgeClass = 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30';
-          } else {
-            badge = `📅 H-${diffDays}`;
-            badgeClass = 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/30';
-          }
-          
-          const tanggalStr = tgl.toLocaleDateString('id-ID', { 
-            weekday: 'long', day: 'numeric', month: 'long' 
-          });
-          
-          const jamMulai = formatTime(k.Jam_Mulai);
-          const jamSelesai = formatTime(k.Jam_Selesai);
-          const jamStr = jamMulai ? (jamSelesai ? `${jamMulai} - ${jamSelesai}` : jamMulai) : '-';
-          
-          return `
-            <div class="bg-slate-50 dark:bg-slate-800/60 rounded-xl p-3 border border-slate-200 dark:border-slate-700">
-              <div class="flex items-start justify-between gap-2 mb-2">
-                <h4 class="font-bold text-sm text-slate-900 dark:text-white flex-1">${k.Judul_Besar || '-'}</h4>
-                <span class="${badgeClass} px-2 py-0.5 border rounded-full text-[10px] font-bold whitespace-nowrap">${badge}</span>
-              </div>
-              <div class="text-xs text-slate-600 dark:text-slate-400 space-y-0.5">
-                <div>🗓️ ${tanggalStr}</div>
-                <div>🕐 ${jamStr} WIB</div>
-                ${k.Tempat ? `<div>📍 ${k.Tempat}</div>` : ''}
-                ${k.MC ? `<div>🎤 MC: ${k.MC}</div>` : ''}
-              </div>
-            </div>
-          `;
-        }).join('');
-      }
-      
+      if (!modal) return;
+      renderReminderContent();
       modal.classList.remove('hidden');
     }
 
-    // Auto refresh setiap 2 menit
+    function renderReminderContent() {
+      const content = document.getElementById('reminderModalContent');
+      if (!content) return;
+      
+      const now = new Date();
+      now.setHours(0, 0, 0, 0);
+      
+      let eventsToShow: KegiatanItem[] = [];
+      let emptyMessage = '';
+      
+      if (currentReminderTab === 'semua') {
+        eventsToShow = allKegiatan;
+        emptyMessage = '✨ Tidak ada kegiatan';
+      } else if (currentReminderTab === 'mendatang') {
+        eventsToShow = allKegiatan.filter((k: KegiatanItem) => {
+          const tgl = new Date(k.Tanggal);
+          tgl.setHours(0, 0, 0, 0);
+          return tgl >= now;
+        });
+        emptyMessage = '✨ Tidak ada kegiatan mendatang';
+      } else if (currentReminderTab === 'lampau') {
+        eventsToShow = allKegiatan.filter((k: KegiatanItem) => {
+          const tgl = new Date(k.Tanggal);
+          tgl.setHours(0, 0, 0, 0);
+          return tgl < now;
+        });
+        emptyMessage = '📜 Belum ada kegiatan lampau';
+      }
+      
+      if (eventsToShow.length === 0) {
+        content.innerHTML = `<div class="text-center py-8 text-slate-400 text-sm">${emptyMessage}</div>`;
+        return;
+      }
+      
+      content.innerHTML = eventsToShow.map((k: KegiatanItem) => {
+        const tgl = new Date(k.Tanggal);
+        tgl.setHours(0, 0, 0, 0);
+        const diffDays = Math.ceil((tgl.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+        
+        let badge = '';
+        let badgeClass = '';
+        let isPast = false;
+        
+        if (diffDays < 0) {
+          badge = `📜 ${Math.abs(diffDays)} hari lalu`;
+          badgeClass = 'bg-slate-500/10 text-slate-500 border-slate-500/30';
+          isPast = true;
+        } else if (diffDays === 0) {
+          badge = '⚡ HARI INI';
+          badgeClass = 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/30';
+        } else if (diffDays === 1) {
+          badge = '🔥 BESOK';
+          badgeClass = 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30';
+        } else {
+          badge = `📅 H-${diffDays}`;
+          badgeClass = 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/30';
+        }
+        
+        const tanggalStr = tgl.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+        const jamMulai = formatTime(k.Jam_Mulai);
+        const jamSelesai = formatTime(k.Jam_Selesai);
+        const jamStr = jamMulai ? (jamSelesai ? `${jamMulai} - ${jamSelesai}` : jamMulai) : '-';
+        
+        const style = getCardStyle(k.Prioritas);
+        const prioritasBadge = getPrioritasBadge(k.Prioritas);
+        const pastStyle = isPast ? 'opacity-60' : '';
+        
+        return `
+          <div class="${style.cardClass} rounded-xl p-3 border ${style.borderClass} ${style.shadow} ${pastStyle}">
+            <div class="flex items-start justify-between gap-2 mb-2">
+              <h4 class="font-bold text-sm text-slate-900 dark:text-white flex-1">${k.Judul_Besar || '-'}</h4>
+              <div class="flex flex-col gap-1 items-end shrink-0">
+                ${prioritasBadge}
+                <span class="${badgeClass} px-2 py-0.5 border rounded-full text-[10px] font-bold whitespace-nowrap">${badge}</span>
+              </div>
+            </div>
+            <div class="text-xs text-slate-600 dark:text-slate-400 space-y-0.5">
+              <div>🗓️ ${tanggalStr}</div>
+              <div>🕐 ${jamStr} WIB</div>
+              ${k.Tempat ? `<div>📍 ${k.Tempat}</div>` : ''}
+              ${k.MC ? `<div>🎤 MC: ${k.MC}</div>` : ''}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
     setInterval(() => fetchKegiatan(), 2 * 60 * 1000);
   </script>
 </body>
