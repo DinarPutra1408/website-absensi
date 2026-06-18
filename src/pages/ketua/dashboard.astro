@@ -32,7 +32,6 @@ const ketuaKelompok = Astro.url.searchParams.get('kelompok') || '';
 
   <div class="max-w-6xl mx-auto" id="ketuaDashboard" data-api={GOOGLE_API_URL} data-kelompok={ketuaKelompok} data-nama={ketuaNama}>
 
-    <!-- Header -->
     <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 pb-5 mb-6 border-b border-slate-200 dark:border-slate-800">
       <div>
         <h1 class="text-xl md:text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Dashboard <span class="text-amber-600 dark:text-amber-400">Ketua Kelompok</span></h1>
@@ -44,7 +43,6 @@ const ketuaKelompok = Astro.url.searchParams.get('kelompok') || '';
       </div>
     </header>
 
-    <!-- Stats Cards -->
     <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
       <div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-4 rounded-2xl shadow-sm">
         <div class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Total Anggota</div>
@@ -67,7 +65,6 @@ const ketuaKelompok = Astro.url.searchParams.get('kelompok') || '';
       </div>
     </div>
 
-    <!-- Search Bar -->
     <div class="mb-6">
       <div class="relative">
         <input 
@@ -83,16 +80,20 @@ const ketuaKelompok = Astro.url.searchParams.get('kelompok') || '';
       </div>
     </div>
 
-    <!-- Tabel Anggota -->
     <div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-sm overflow-hidden">
       <div class="p-4 border-b border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div class="border-l-4 border-amber-500 pl-3">
           <h2 class="text-sm font-bold text-slate-900 dark:text-white">Daftar Anggota {ketuaKelompok}</h2>
           <p class="text-xs text-slate-500 dark:text-slate-400">Kelola data anggota kelompok Anda</p>
         </div>
-        <button id="btnRefresh" class="px-3 py-1.5 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300 text-xs font-bold rounded-lg transition-all flex items-center gap-1">
-          🔄 Refresh
-        </button>
+        <div class="flex items-center gap-2 self-end sm:self-center">
+          <button id="btnBukaTambah" class="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold rounded-lg shadow-sm transition-all flex items-center gap-1">
+            ➕ Tambah Anggota
+          </button>
+          <button id="btnRefresh" class="px-3 py-1.5 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300 text-xs font-bold rounded-lg transition-all flex items-center gap-1">
+            🔄 Refresh
+          </button>
+        </div>
       </div>
       
       <div class="overflow-x-auto">
@@ -116,7 +117,6 @@ const ketuaKelompok = Astro.url.searchParams.get('kelompok') || '';
         </table>
       </div>
       
-      <!-- Empty State -->
       <div id="emptyState" class="hidden p-8 text-center">
         <div class="text-4xl mb-2">🔍</div>
         <p class="text-sm text-slate-500">Tidak ada anggota yang cocok dengan pencarian</p>
@@ -125,7 +125,40 @@ const ketuaKelompok = Astro.url.searchParams.get('kelompok') || '';
 
   </div>
 
-  <!-- Modal Edit User -->
+  <!-- MODAL TAMBAH USER -->
+  <div id="modalTambahUser" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+    <div class="bg-white dark:bg-slate-900 rounded-2xl p-6 max-w-md w-full shadow-2xl border border-slate-200 dark:border-slate-700">
+      <h3 class="text-base font-bold mb-1 text-slate-900 dark:text-white">Tambah Anggota Baru</h3>
+      <p class="text-xs text-slate-500 mb-4">ID Kartu akan digenerate otomatis berdasarkan Nama.</p>
+      
+      <div class="space-y-3">
+        <div>
+          <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5">Nama Lengkap</label>
+          <input type="text" id="tambahNama" placeholder="Nama anggota baru"
+            class="w-full p-3 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-sm outline-none focus:ring-2 focus:ring-amber-500"/>
+        </div>
+        <div>
+          <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5">Gender</label>
+          <select id="tambahGender" class="w-full p-3 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-sm outline-none">
+            <option value="Laki-laki">Laki-laki</option>
+            <option value="Perempuan">Perempuan</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5">Kelompok</label>
+          <input type="text" id="tambahKelompok" value={ketuaKelompok} disabled
+            class="w-full p-3 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 rounded-xl text-sm outline-none cursor-not-allowed"/>
+        </div>
+      </div>
+      
+      <div class="flex gap-2 mt-5">
+        <button id="btnBatalTambah" class="flex-1 py-2.5 bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-sm font-bold rounded-xl">Batal</button>
+        <button id="btnSimpanTambah" class="flex-1 py-2.5 bg-amber-500 hover:bg-amber-600 text-white text-sm font-bold rounded-xl">Simpan</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL EDIT USER -->
   <div id="modalEditUser" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
     <div class="bg-white dark:bg-slate-900 rounded-2xl p-6 max-w-md w-full shadow-2xl border border-slate-200 dark:border-slate-700">
       <h3 class="text-base font-bold mb-1 text-slate-900 dark:text-white">Edit Data Anggota</h3>
@@ -164,7 +197,7 @@ const ketuaKelompok = Astro.url.searchParams.get('kelompok') || '';
     </div>
   </div>
 
-  <!-- Modal Konfirmasi Hapus -->
+  <!-- MODAL HAPUS USER -->
   <div id="modalHapus" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
     <div class="bg-white dark:bg-slate-900 rounded-2xl p-6 max-w-sm w-full shadow-2xl border border-slate-200 dark:border-slate-700 text-center">
       <div class="w-12 h-12 bg-rose-500/10 rounded-full flex items-center justify-center mx-auto mb-3">
@@ -207,36 +240,32 @@ const ketuaKelompok = Astro.url.searchParams.get('kelompok') || '';
     const searchTotal = document.getElementById('searchTotal');
     const emptyState = document.getElementById('emptyState');
 
-    // 🔥 SEARCH FUNCTION - Real-time
+    // SEARCH FUNCTION
     searchInput?.addEventListener('input', function(e) {
       const keyword = e.target.value.toLowerCase().trim();
       
       if (keyword === '') {
-        // Reset ke semua data
         filteredMembers = [...allMembers];
         searchInfo.classList.add('hidden');
         searchResultCount.classList.add('hidden');
       } else {
-        // Filter berdasarkan nama
         filteredMembers = allMembers.filter(member => 
           member.Nama.toLowerCase().includes(keyword) ||
           (member.ID_User && member.ID_User.toLowerCase().includes(keyword))
         );
         
-        // Tampilkan info pencarian
         searchShowing.textContent = filteredMembers.length;
         searchTotal.textContent = allMembers.length;
         searchInfo.classList.remove('hidden');
         searchResultCount.textContent = `${filteredMembers.length} hasil`;
         searchResultCount.classList.remove('hidden');
       }
-      
       renderTable();
     });
 
     // Refresh Button
     document.getElementById('btnRefresh')?.addEventListener('click', () => {
-      searchInput.value = '';
+      if (searchInput) searchInput.value = '';
       loadDashboard();
     });
 
@@ -250,16 +279,15 @@ const ketuaKelompok = Astro.url.searchParams.get('kelompok') || '';
         
         if (!data.users) throw new Error('Data users tidak ditemukan');
 
-        // Filter hanya anggota dari kelompok ketua
+        // Filter logic disesuaikan dengan kemungkinan nama field di JSON
         allMembers = data.users.filter(u => {
+          // Cek berbagai kemungkinan nama field kelompok dari backend
           const userKelompok = u.Kelompok || u.NamaKelompok || u.Nama_Kelompok || u.kelompok || '';
           return userKelompok.toString().trim().toLowerCase() === KELOMPOK_KETUA.toLowerCase();
         });
 
-        // Reset filtered members
         filteredMembers = [...allMembers];
 
-        // Hitung statistik
         let totalHadir = 0, totalIzin = 0;
         allMembers.forEach(m => {
           const status = (m.Status_Hari_Ini || '').toString().trim();
@@ -269,13 +297,11 @@ const ketuaKelompok = Astro.url.searchParams.get('kelompok') || '';
 
         const persentase = allMembers.length > 0 ? ((totalHadir / allMembers.length) * 100).toFixed(1) : 0;
 
-        // Update stats
         document.getElementById('statTotalAnggota').textContent = allMembers.length;
         document.getElementById('statHadir').textContent = totalHadir;
         document.getElementById('statIzin').textContent = totalIzin;
         document.getElementById('statPersen').textContent = persentase + '%';
 
-        // Render tabel
         renderTable();
 
       } catch (error) {
@@ -284,7 +310,7 @@ const ketuaKelompok = Astro.url.searchParams.get('kelompok') || '';
       }
     }
 
-    // 🔥 RENDER TABLE FUNCTION
+    // RENDER TABLE FUNCTION
     function renderTable() {
       const tbody = document.getElementById('tabelAnggota');
       
@@ -315,6 +341,7 @@ const ketuaKelompok = Astro.url.searchParams.get('kelompok') || '';
           ? '<span class="px-2 py-0.5 bg-pink-500/10 text-pink-600 dark:text-pink-400 text-[10px] font-bold rounded-full">♀</span>'
           : '<span class="px-2 py-0.5 bg-blue-500/10 text-blue-600 dark:text-blue-400 text-[10px] font-bold rounded-full">♂</span>';
 
+        // Pastikan mengambil ID dengan benar
         const userId = member.ID_User || member.id_user || '';
         const nama = member.Nama || member.nama || '';
         const gender = member.Gender || member.gender || 'Laki-laki';
@@ -347,7 +374,73 @@ const ketuaKelompok = Astro.url.searchParams.get('kelompok') || '';
     }
 
     // ==========================================
-    // MODAL EDIT USER
+    // LOGIKA MODAL TAMBAH ANGGOTA (DIPERBAIKI)
+    // ==========================================
+    const modalTambah = document.getElementById('modalTambahUser');
+    const btnBukaTambah = document.getElementById('btnBukaTambah');
+    const btnBatalTambah = document.getElementById('btnBatalTambah');
+    const btnSimpanTambah = document.getElementById('btnSimpanTambah');
+
+    btnBukaTambah?.addEventListener('click', () => {
+      document.getElementById('tambahNama').value = '';
+      document.getElementById('tambahGender').value = 'Laki-laki';
+      modalTambah.classList.remove('hidden');
+      modalTambah.classList.add('flex');
+    });
+
+    btnBatalTambah?.addEventListener('click', () => {
+      modalTambah.classList.add('hidden');
+      modalTambah.classList.remove('flex');
+    });
+
+    btnSimpanTambah?.addEventListener('click', async () => {
+      const nama = document.getElementById('tambahNama').value.trim();
+      const gender = document.getElementById('tambahGender').value;
+
+      if (!nama) return alert('Nama anggota baru tidak boleh kosong!');
+
+      // Generate ID sederhana dari nama (opsional, atau biarkan backend handle jika ada logic khusus)
+      // Di sini kita gunakan nama sebagai ID sementara sesuai logika backend 'id_user'
+      const generatedId = nama.replace(/\s+/g, '').toLowerCase() + Date.now().toString().slice(-4);
+
+      btnSimpanTambah.disabled = true;
+      btnSimpanTambah.textContent = 'Menyimpan...';
+
+      // PERBAIKAN UTAMA DI SINI: Action 'tambah_user' dan parameter 'id_user'
+      const payload = new URLSearchParams({
+        action: 'tambah_user', 
+        id_user: generatedId, // Backend butuh ini
+        nama: nama,
+        gender: gender,
+        kelompok: KELOMPOK_KETUA
+      });
+
+      try {
+        const res = await fetch(API_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: payload.toString()
+        });
+        const result = await res.text();
+
+        if (result.includes('KATA_KUNCI_SUKSES')) {
+          alert('Anggota baru berhasil ditambahkan!');
+          modalTambah.classList.add('hidden');
+          modalTambah.classList.remove('flex');
+          loadDashboard();
+        } else {
+          alert('Gagal: ' + result.replace('KATA_KUNCI_GAGAL: ', ''));
+        }
+      } catch (err) {
+        alert('Terjadi kesalahan: ' + err.message);
+      } finally {
+        btnSimpanTambah.disabled = false;
+        btnSimpanTambah.textContent = 'Simpan';
+      }
+    });
+
+    // ==========================================
+    // MODAL EDIT USER (DIPERBAIKI)
     // ==========================================
     const modalEdit = document.getElementById('modalEditUser');
     
@@ -373,13 +466,14 @@ const ketuaKelompok = Astro.url.searchParams.get('kelompok') || '';
 
       if (!nama) return alert('Nama tidak boleh kosong!');
 
+      // PERBAIKAN: Pastikan action sesuai backend 'update_user_kelompok'
       const payload = new URLSearchParams({
         action: 'update_user_kelompok',
         user_id: userId,
         nama: nama,
         gender: gender,
         kelompok: kelompok,
-        ketua_kelompok: KELOMPOK_KETUA
+        ketua_kelompok: KELOMPOK_KETUA // Penting untuk validasi keamanan di backend
       });
 
       try {
@@ -404,7 +498,7 @@ const ketuaKelompok = Astro.url.searchParams.get('kelompok') || '';
     });
 
     // ==========================================
-    // MODAL HAPUS USER
+    // MODAL HAPUS USER (DIPERBAIKI)
     // ==========================================
     const modalHapus = document.getElementById('modalHapus');
     let hapusUserId = '';
@@ -425,10 +519,11 @@ const ketuaKelompok = Astro.url.searchParams.get('kelompok') || '';
     document.getElementById('btnKonfirmasiHapus')?.addEventListener('click', async () => {
       if (!hapusUserId) return;
 
+      // PERBAIKAN: Pastikan action sesuai backend 'hapus_user_kelompok'
       const payload = new URLSearchParams({
         action: 'hapus_user_kelompok',
         user_id: hapusUserId,
-        ketua_kelompok: KELOMPOK_KETUA
+        ketua_kelompok: KELOMPOK_KETUA // Penting untuk validasi keamanan di backend
       });
 
       try {
