@@ -129,7 +129,7 @@ const ketuaKelompok = Astro.url.searchParams.get('kelompok') || '';
   <div id="modalTambahUser" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
     <div class="bg-white dark:bg-slate-900 rounded-2xl p-6 max-w-md w-full shadow-2xl border border-slate-200 dark:border-slate-700">
       <h3 class="text-base font-bold mb-1 text-slate-900 dark:text-white">Tambah Anggota Baru</h3>
-      <p class="text-xs text-slate-500 mb-4">ID Kartu akan digenerate otomatis berdasarkan Nama.</p>
+      <p class="text-xs text-slate-500 mb-4">ID Kartu (USR + angka) akan digenerate otomatis oleh sistem.</p>
       
       <div class="space-y-3">
         <div>
@@ -281,7 +281,6 @@ const ketuaKelompok = Astro.url.searchParams.get('kelompok') || '';
 
         // Filter logic disesuaikan dengan kemungkinan nama field di JSON
         allMembers = data.users.filter(u => {
-          // Cek berbagai kemungkinan nama field kelompok dari backend
           const userKelompok = u.Kelompok || u.NamaKelompok || u.Nama_Kelompok || u.kelompok || '';
           return userKelompok.toString().trim().toLowerCase() === KELOMPOK_KETUA.toLowerCase();
         });
@@ -341,7 +340,6 @@ const ketuaKelompok = Astro.url.searchParams.get('kelompok') || '';
           ? '<span class="px-2 py-0.5 bg-pink-500/10 text-pink-600 dark:text-pink-400 text-[10px] font-bold rounded-full">♀</span>'
           : '<span class="px-2 py-0.5 bg-blue-500/10 text-blue-600 dark:text-blue-400 text-[10px] font-bold rounded-full">♂</span>';
 
-        // Pastikan mengambil ID dengan benar
         const userId = member.ID_User || member.id_user || '';
         const nama = member.Nama || member.nama || '';
         const gender = member.Gender || member.gender || 'Laki-laki';
@@ -374,7 +372,31 @@ const ketuaKelompok = Astro.url.searchParams.get('kelompok') || '';
     }
 
     // ==========================================
-    // LOGIKA MODAL TAMBAH ANGGOTA (DIPERBAIKI)
+    // 🔥 FUNGSI GENERATE ID USR + 3 DIGIT ANGKA
+    // ==========================================
+    function generateUSRId() {
+      // Cek ID yang sudah ada di data anggota saat ini untuk menghindari duplikasi
+      const existingIds = new Set(allMembers.map(m => (m.ID_User || m.id_user || '').toString().toUpperCase()));
+      
+      let newId;
+      let attempts = 0;
+      do {
+        // Format: USR + 3 digit angka (100 - 999)
+        const randomNum = Math.floor(100 + Math.random() * 900);
+        newId = 'USR' + randomNum;
+        attempts++;
+        
+        // Fallback: jika semua 900 kombinasi habis (sangat tidak mungkin), tambah digit
+        if (attempts > 50) {
+          return 'USR' + Date.now().toString().slice(-5);
+        }
+      } while (existingIds.has(newId));
+      
+      return newId;
+    }
+
+    // ==========================================
+    // LOGIKA MODAL TAMBAH ANGGOTA
     // ==========================================
     const modalTambah = document.getElementById('modalTambahUser');
     const btnBukaTambah = document.getElementById('btnBukaTambah');
@@ -399,17 +421,16 @@ const ketuaKelompok = Astro.url.searchParams.get('kelompok') || '';
 
       if (!nama) return alert('Nama anggota baru tidak boleh kosong!');
 
-      // Generate ID sederhana dari nama (opsional, atau biarkan backend handle jika ada logic khusus)
-      // Di sini kita gunakan nama sebagai ID sementara sesuai logika backend 'id_user'
-      const generatedId = nama.replace(/\s+/g, '').toLowerCase() + Date.now().toString().slice(-4);
+      // 🔥 GENERATE ID FORMAT USR + 3 DIGIT (CONTOH: USR702)
+      const generatedId = generateUSRId();
 
       btnSimpanTambah.disabled = true;
       btnSimpanTambah.textContent = 'Menyimpan...';
 
-      // PERBAIKAN UTAMA DI SINI: Action 'tambah_user' dan parameter 'id_user'
+      // Kirim ke backend dengan action 'tambah_user' dan parameter 'id_user'
       const payload = new URLSearchParams({
         action: 'tambah_user', 
-        id_user: generatedId, // Backend butuh ini
+        id_user: generatedId, 
         nama: nama,
         gender: gender,
         kelompok: KELOMPOK_KETUA
@@ -424,7 +445,7 @@ const ketuaKelompok = Astro.url.searchParams.get('kelompok') || '';
         const result = await res.text();
 
         if (result.includes('KATA_KUNCI_SUKSES')) {
-          alert('Anggota baru berhasil ditambahkan!');
+          alert('✅ Anggota baru berhasil ditambahkan!\nID Kartu: ' + generatedId);
           modalTambah.classList.add('hidden');
           modalTambah.classList.remove('flex');
           loadDashboard();
@@ -440,7 +461,7 @@ const ketuaKelompok = Astro.url.searchParams.get('kelompok') || '';
     });
 
     // ==========================================
-    // MODAL EDIT USER (DIPERBAIKI)
+    // MODAL EDIT USER
     // ==========================================
     const modalEdit = document.getElementById('modalEditUser');
     
@@ -466,14 +487,13 @@ const ketuaKelompok = Astro.url.searchParams.get('kelompok') || '';
 
       if (!nama) return alert('Nama tidak boleh kosong!');
 
-      // PERBAIKAN: Pastikan action sesuai backend 'update_user_kelompok'
       const payload = new URLSearchParams({
         action: 'update_user_kelompok',
         user_id: userId,
         nama: nama,
         gender: gender,
         kelompok: kelompok,
-        ketua_kelompok: KELOMPOK_KETUA // Penting untuk validasi keamanan di backend
+        ketua_kelompok: KELOMPOK_KETUA
       });
 
       try {
@@ -498,7 +518,7 @@ const ketuaKelompok = Astro.url.searchParams.get('kelompok') || '';
     });
 
     // ==========================================
-    // MODAL HAPUS USER (DIPERBAIKI)
+    // MODAL HAPUS USER
     // ==========================================
     const modalHapus = document.getElementById('modalHapus');
     let hapusUserId = '';
@@ -519,11 +539,10 @@ const ketuaKelompok = Astro.url.searchParams.get('kelompok') || '';
     document.getElementById('btnKonfirmasiHapus')?.addEventListener('click', async () => {
       if (!hapusUserId) return;
 
-      // PERBAIKAN: Pastikan action sesuai backend 'hapus_user_kelompok'
       const payload = new URLSearchParams({
         action: 'hapus_user_kelompok',
         user_id: hapusUserId,
-        ketua_kelompok: KELOMPOK_KETUA // Penting untuk validasi keamanan di backend
+        ketua_kelompok: KELOMPOK_KETUA
       });
 
       try {
