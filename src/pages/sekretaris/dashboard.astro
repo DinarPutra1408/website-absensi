@@ -161,7 +161,7 @@ const sekretarisNama = Astro.url.searchParams.get('nama') || 'Sekretaris';
           
           <div>
             <label class="block text-xs font-bold mb-1">MC / Moderator</label>
-            <input type="text" id="inpMC/Moderator" placeholder="Contoh: Kelompok Wonorejo" class="w-full p-3 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-sm"/>
+            <input type="text" id="inpMC" placeholder="Contoh: Kelompok Wonorejo" class="w-full p-3 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-sm"/>
           </div>
           
           <div>
@@ -584,12 +584,12 @@ const sekretarisNama = Astro.url.searchParams.get('nama') || 'Sekretaris';
       }
       
       text += `\n━━━━━━━━━━━━━━━━━━\n`;
-      if (k.MC) text += `🎤 MC : ${k.MC}\n`;
+      if (k.MC) text += `🎤 MC/Moderator : ${k.MC}\n`;
       if (k.Peserta) text += `👥 Peserta : ${k.Peserta}\n`;
       if (k.Tempat) text += `📍 Tempat : ${k.Tempat}\n`;
       if (k.Deskripsi) text += `\n📝 _${k.Deskripsi}_\n`;
       
-      text += `\nالْحَمْدُ لِلَّهِ وَجَزَاكُمُ اللَّهُ خَيْرًا\n🙏🙏\n\nوالسلام عليكم ورحمة الله وبركاته`;
+      text += `\nالْحَمْدُ لِلَّهِ جَزَاكُمُ اللَّهُ خَيْرًا\n🙏🙏\n\nوالسلام عليكم ورحمة الله وبركاته`;
 
       return text;
     }
@@ -810,7 +810,7 @@ const sekretarisNama = Astro.url.searchParams.get('nama') || 'Sekretaris';
               </div>
               <div class="text-xs text-slate-500 space-y-0.5">
                 <div>🗓️ ${dateRange} • 🕐 ${formatTime(k.Jam_Mulai) || '-'}${k.Jam_Selesai ? ' - ' + formatTime(k.Jam_Selesai) : ''}</div>
-                ${k.MC ? `<div>🎤 MC: ${k.MC}</div>` : ''}
+                ${k.MC ? `<div>🎤 MC/Moderator: ${k.MC}</div>` : ''}
                 ${k.Tempat ? `<div>📍 ${k.Tempat}</div>` : ''}
                 ${k.Peserta ? `<div>👥 ${k.Peserta}</div>` : ''}
               </div>
